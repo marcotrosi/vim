@@ -1,0 +1,39 @@
+*aRTlua.txt*  For LUA version 5.1.4.  Last change: 2013 Jun 03
+
+
+		  VIM REFERENCE MANUAL    by Marco Trosi
+
+			    aRTlua library
+
+						*aRTlua* *Contents*
+lib	description		function		description	~
+|aRTtst|	unit testing
+				|INIT_TEST|	initialize unit tests
+|aRTdbg|	debugging and logging
+|aRTerr|	error handling
+|aRTcli|	command line interface
+|aRTstr|	string functions
+|aRTtbl|	table functions
+|aRTos|	operating system access
+|aRTio|	input-output functions
+|aRTfh|	file handling
+|aRTcfg|	configuration handling
+|aRTbool|	boolean operations
+|aRTfp|	functional programming
+
+====================================================================================================
+*aRTtst*						unit testing
+
+*INIT_TEST*
+----------------------------------------------------------------------------------------------------
+
+*EQUAL*
+----------------------------------------------------------------------------------------------------
+
+*EQUAL_TABLE*
+----------------------------------------------------------------------------------------------------
+
+====================================================================================================
+*aRTdbg*						debugging and logging
+
+ vim:tw=100:ts=10:ft=help:norl:

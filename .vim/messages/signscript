@@ -1,0 +1,102 @@
+local signvimfile = arg[1]
+local messagedir  = arg[2]
+local messages    = arg[3]
+
+local Signs_t = {}
+
+local MT = {"O", "I", "W", "E", O=1, I=2, W=3, E=4}
+
+function getWorstType(a,b) -- <<<
+   if b == nil then return a end
+   return MT[math.max(MT[a], MT[b])]
+end -- >>>
+
+function printTable(t, f) -- <<<
+-- t = table
+-- f = filename [optional]
+
+   local function printTableHelper(obj, cnt)
+
+      local cnt = cnt or 0
+
+      if type(obj) == "table" then
+
+         io.write("\n", string.rep("\t", cnt), "{\n")
+         cnt = cnt + 1
+
+         for k,v in pairs(obj) do
+
+            if type(k) == "string" then
+               io.write(string.rep("\t",cnt),  '[ [['..k..']] ]' , ' = ')
+            end
+
+            if type(k) == "number" then
+               io.write(string.rep("\t",cnt), "["..k.."]", " = ")
+            end
+
+            printTableHelper(v, cnt)
+            io.write(",\n")
+         end
+
+         cnt = cnt-1
+         io.write(string.rep("\t", cnt), "}")
+
+      elseif type(obj) == "string" then
+         io.write(string.format("%q", obj))
+
+      else
+         io.write(tostring(obj))
+      end 
+   end
+
+   if f == nil then
+      printTableHelper(t)
+   else
+      io.output(f)
+      io.write("return")
+      printTableHelper(t)
+      io.output(io.stdout)
+   end
+end -- >>>
+
+function getFilesFromDir(d) -- <<<
+   local Files_t = {}
+   local h = io.popen("dir /A /B /S "..d)
+   while true do
+      local f = h:read()
+      if not f then break end
+      table.insert(Files_t, f)
+   end
+   return Files_t
+end -- >>>
+
+for _,filename in ipairs(getFilesFromDir(messagedir)) do
+   m = io.open(filename)
+   for line in m:lines() do
+      local fn,ln,mt,msg = string.match(line, '(.-);(%d+);([EWIO]);(.*)')
+      if fn then
+         if Signs_t[fn] == nil then
+            Signs_t[fn] = {}
+         end
+         -- Signs_t[fn][ln] = getWorstType(mt, Signs_t[fn][ln])
+         Signs_t[fn][ln] = {['type']=getWorstType(mt, Signs_t[fn][ln]), ['message']=msg}
+      end
+   end
+   m:close()
+end
+
+local id=1
+s = io.open(signvimfile, "w")
+for fn,fnm in pairs(Signs_t) do
+   -- for ln,mt in pairs(Signs_t[fn]) do
+   for ln,msg in pairs(Signs_t[fn]) do
+      -- s:write(string.format('sign place %d line=%s name=%s file=%s\n',id,ln,mt,fn))
+      s:write(string.format('sign place %d line=%s name=%s file=%s\n',id,ln,msg.type,fn))
+      id = id + 1
+   end
+end
+s:close()
+
+printTable(Signs_t, messages)
+
+os.exit(0)

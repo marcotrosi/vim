@@ -1,0 +1,11 @@
+return
+{
+  ['filepath']    = [[C:\LegacyApp\_my\tools\vim\.vimrc]],
+  ['filedir']     = [[C:\LegacyApp\_my\tools\vim]],
+  ['filename']    = [[.vimrc]],
+  ['fileext']     = [[]],
+  ['cwd']         = [[C:\LegacyApp\_my\tools\vim\vim80]],
+  ['line']        = [[23]],
+  ['column']      = [[12]],
+  ['text']        = [[myColorscheme]],
+}

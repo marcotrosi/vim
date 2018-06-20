@@ -1,0 +1,75 @@
+local balloondata = arg[1]
+local balloontext = arg[2]
+local messages    = arg[3]
+
+function printTable(t, f) -- <<<
+-- t = table
+-- f = filename [optional]
+
+   local function printTableHelper(obj, cnt)
+
+      local cnt = cnt or 0
+
+      if type(obj) == "table" then
+
+         io.write("\n", string.rep("\t", cnt), "{\n")
+         cnt = cnt + 1
+
+         for k,v in pairs(obj) do
+
+            if type(k) == "string" then
+               io.write(string.rep("\t",cnt), '["'..k..'"]', ' = ')
+            end
+
+            if type(k) == "number" then
+               io.write(string.rep("\t",cnt), "["..k.."]", " = ")
+            end
+
+            printTableHelper(v, cnt)
+            io.write(",\n")
+         end
+
+         cnt = cnt-1
+         io.write(string.rep("\t", cnt), "}")
+
+      elseif type(obj) == "string" then
+         io.write(string.format("%q", obj))
+
+      else
+         io.write(tostring(obj))
+      end 
+   end
+
+   if f == nil then
+      printTableHelper(t)
+   else
+      io.output(f)
+      io.write("return")
+      printTableHelper(t)
+      io.output(io.stdout)
+   end
+end -- >>>
+
+d = dofile(balloondata)
+m = dofile(messages)
+
+-- printTable(m)
+
+h = io.open(balloontext, "w")
+
+-- h:write('filepath: ' .. d['filepath'].."\n")
+-- h:write('filedir:  ' .. d['filedir'] .."\n")
+-- h:write('filename: ' .. d['filename'].."\n")
+-- h:write('fileext:  ' .. d['fileext'] .."\n")
+-- h:write('cwd:      ' .. d['cwd']     .."\n")
+-- h:write('line:     ' .. d['line']    .."\n")
+-- h:write('column:   ' .. d['column']  .."\n")
+-- h:write('text:     ' .. d['text']          )
+
+if m[d['filepath']] and m[d['filepath']][d['line']] then
+   h:write(m[d['filepath']][d['line']].message .. "\n")
+end
+
+h:close()
+
+os.exit(0)
