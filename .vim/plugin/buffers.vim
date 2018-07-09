@@ -7,7 +7,7 @@ function! Buffers() " <<<
    let l:NumOfBuffers          = bufnr('$')
    let l:LineNumOfActiveBuffer = 0
    let l:NumOfDisplayedBuffers = 0
-   let l:LongestNameLength     = 0
+   let l:LongestNameLength     = 20
 
    " clean lists
    call filter(s:ListOfBuffers         , 0)
@@ -44,10 +44,7 @@ function! Buffers() " <<<
       endif
    endwhile
 
-   let l:Content = join(s:ListOfDisplayedBuffers, "\n")
-
-   return [min([l:MaxPanelWidth, l:LongestNameLength]), l:Content, l:LineNumOfActiveBuffer]
-
+   return [min([l:MaxPanelWidth, l:LongestNameLength]), s:ListOfDisplayedBuffers, l:LineNumOfActiveBuffer]
 endfunction " >>>
 
 function! BuffersSetup() " <<<

@@ -1,7 +1,7 @@
+"/Users/marcotrosi/.vim/plugin/files.vim
 "/Users/marcotrosi/.vim/plugin/tags.vim
 "/Users/marcotrosi/.vim/plugin/sessions.vim
 "/Users/marcotrosi/.vim/plugin/buffers.vim
-"/Users/marcotrosi/.vim/plugin/files.vim
 
 " Things to consider when using this file
 " 1. provide a function that fills the panel with content and a second function with the same name in the beginning and
@@ -15,52 +15,22 @@ let PanelLoaded = 1
 
 let s:Panel = "Files" " init value in case PanelToggle is called first
 
-function! PanelToggle() " <<<
-
-   let bufnr = bufwinnr("__PANEL__")
-
-   if bufnr == -1
-
-      exec 'let l:Data='.s:Panel.'()'
-
-      exec 'silent! ' . l:Data[0] . 'vnew __PANEL__'
-
-      setlocal modifiable
-
-      put! =l:Data[1]
-
-      $d_
-
-      call cursor(l:Data[2], 1)
-
-      setlocal noshowcmd
-      setlocal buftype=nofile
-      setlocal bufhidden=wipe
-      " setlocal bufhidden=delete
-      setlocal noswapfile
-      setlocal nowrap
-      setlocal nobuflisted
-      setlocal nonumber
-      setlocal nospell
-      setlocal statusline=
-      setlocal nomodifiable
-
-      nnoremap <buffer> <silent> q :bwipeout!<CR>
-
-   else
-
-      bwipeout! __PANEL__
-   endif
+function! PanelClose() " <<<
+   silent! bwipeout! __PANEL__
 endfunction " >>>
 
 function! Panel(tool) " <<<
 
-   let bufnr = bufwinnr("__PANEL__")
+   let l:PanelWinNum = bufwinnr("__PANEL__")
 
    "no __PANEL__ buffer open
-   if bufnr == -1
+   if l:PanelWinNum == -1
 
       let s:Panel = a:tool
+
+      if exists('*'.s:Panel.'Init')
+         exec 'call '.s:Panel.'Init()'
+      endif
 
       exec 'let l:Data='.s:Panel.'()'
 
@@ -87,7 +57,9 @@ function! Panel(tool) " <<<
       " setlocal laststatus=0
       setlocal nomodifiable
 
+      " if exists('*'.s:Panel.'Setup')
       exec 'call '.s:Panel.'Setup()'
+      " endif
 
       nnoremap <buffer> <silent> q :bwipeout!<CR>
 
@@ -106,7 +78,7 @@ function! Panel(tool) " <<<
             bwipeout! __PANEL__
          else
             " or we select the __PANEL__ buffer
-            execute bufnr . 'wincmd w'
+            exec l:PanelWinNum . 'wincmd w'
          endif
       endif
    endif

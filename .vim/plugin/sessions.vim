@@ -19,12 +19,12 @@ function! Sessions() " <<<
       let l:FileName = substitute(l:FileName, '.*/', '', '')
       let l:FileName = substitute(l:FileName, '\.vim$', '', '')
 
-      call add(s:ListOfDisplayedSessions, l:FileName)
+      call add(s:ListOfDisplayedSessions, ' '.l:FileName)
    endfor
 
-   let l:Content = join(s:ListOfDisplayedSessions, "\n")
-
-   return [l:PanelWidth, l:Content, 1]
+   " let l:Content = join(s:ListOfDisplayedSessions, "\n")
+   " return [l:PanelWidth, l:Content, 1]
+   return [l:PanelWidth, s:ListOfDisplayedSessions, 1]
 
 endfunction " >>>
 

@@ -219,7 +219,7 @@ function! CycleTabSpace()
 endfunction " >>>
 
 " make menu <<<
-function! MakeMenu()
+function! Make()
    let l:myMakeTargets = ["quit", "", "tag", "cln", "bld", "tst", "rel", "all", "doc"]
    let l:c=0
    let l:c = confirm("Make Menu","&make\nta&g\n&cln\n&bld\n&tst\n&rel\n&all\n&doc")
@@ -523,33 +523,6 @@ endfunction
 set completefunc=LatexFont
 " >>>
 
-" filename functions <<<
-" TODO: support dotfiles
-function! GetFilePath(str) " <<<
-   let l:FileName = substitute(a:str, '\\', '/', 'g')
-   let l:FileName = substitute(l:FileName, '\(.*\)/.*', '\1', '')
-   return l:FileName
-endfunction " >>>
-
-function! GetFileName(str) " <<<
-   let l:FileName = substitute(a:str, '\\', '/', 'g')
-   let l:FileName = substitute(l:FileName, '.*/', '', '')
-   let l:FileName = substitute(l:FileName, '\(.*\)\..*', '\1', '')
-   return l:FileName
-endfunction " >>>
-
-function! GetFileNameExt(str) " <<<
-   let l:FileName = substitute(a:str, '\\', '/', 'g')
-   let l:FileName = substitute(l:FileName, '.*/', '', '')
-   return l:FileName
-endfunction " >>>
-
-function! GetFileExt(str) " <<<
-   let l:FileName = substitute(a:str, '.*\.', '', '')
-   return l:FileName
-endfunction " >>>
-" >>>
-
 " clean up <<<
 function! CleanUp()
       call delete(g:BalloonText)
@@ -617,6 +590,7 @@ set listchars=eol:↲,tab:↦\ ,nbsp:␣,extends:…,trail:⋅
 set mousemodel=popup_setpos
 set nrformats=bin,hex,alpha
 set path=.,,** " use :checkpath
+set sessionoptions=buffers,curdir
 set shortmess="fIlmnxtToO"
 set spelllang=en
 set spellsuggest=9
@@ -662,6 +636,7 @@ augroup VIMRC
    autocmd BufLeave makefile set expandtab
    autocmd VimLeavePre * call CleanUp()
    autocmd ColorScheme * call DefMatchColors() " temporary til part of colorschemes
+   " autocmd WinLeave * let g:prevwin=win_getid()
    "autocmd BufWritePost .crontab !crontab ~/.crontab
 augroup END
 " >>>
@@ -940,9 +915,10 @@ nnoremap g<CR> :nohl<CR>
 " nnoremap ü<TAB> -> ü is used for Ctrl-w
 " nnoremap Ctrl-w {   tag jump in split window
 
-nnoremap öm :call MakeMenu()<CR>
+nnoremap öm :call Make()<CR>
 
-nnoremap <F1> :call PanelToggle()<CR>
+nnoremap öc :call PanelClose()<CR>
+nnoremap <F1> :call PanelClose()<CR>
 nnoremap <F2> :call Panel('Buffers')<CR>
 nnoremap <F3> :call Panel('Sessions')<CR>
 nnoremap <F4> :call Panel('Tags')<CR>
