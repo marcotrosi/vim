@@ -1,6 +1,6 @@
-# vim
+# My Vim Config
 
-My MacVim setup is still in development, and very personalized to my needs and to my German 61 keys mechanical
+My MacVim config is still (and will always be) in development, and very personalized to my needs and to my German 61 keys mechanical
 keyboard with personal key-layout. Yes, all very personal.
 
 The purpose of this repository is mainly being a backup, to track my changes just in case I need to get back to older
