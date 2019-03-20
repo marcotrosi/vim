@@ -20,9 +20,18 @@ endf
 " cycle colorschemes <<<
 let s:myColorscheme = 0
 let s:myColorschemeList  = []
-let s:myColorschemeFiles = globpath("~/.vim/colors", "*.vim", 0, 1)
+   if has("win32")
+      let s:myColorschemeFiles = globpath($VIM . '\vimfiles\colors', "*.vim", 0, 1)      
+   else
+      let s:myColorschemeFiles = globpath("~/.vim/colors", "*.vim", 0, 1)
+   endif
+
 for cs in s:myColorschemeFiles
-   call add(s:myColorschemeList, substitute(substitute(cs, "\.vim$", "",""), ".*/", "", ""))
+   if has("win32")
+      call add(s:myColorschemeList, substitute(substitute(cs, "\.vim$", "",""), ".*\\", "", ""))
+   else
+      call add(s:myColorschemeList, substitute(substitute(cs, "\.vim$", "",""), ".*/", "", ""))
+   endif
 endfor
 unlet s:myColorschemeFiles
 
@@ -152,11 +161,11 @@ endfunction
 " >>>
 " >>>
 
-" cycle font face and size <<< 
+" cycle font type and size <<< 
 let s:myFontType     = 0 
 let s:myFontSize     = 2 
 let s:myFontTypeList = ["Menlo", "Monaco", "Andale\\ Mono"] 
-let s:myFontSizeList = ["9", "10", "11", "12", "13", "14", "15", "16"] 
+let s:myFontSizeList = ["9", "10", "11", "12", "13", "14", "15", "16"]
 
 function! CycleFontType() 
    let s:myFontType = s:myFontType + 1 
@@ -267,31 +276,37 @@ function! DefMatchColors() " <<<
    hi Match9 guifg=White guibg=firebrick4 
 endfunction " >>>
 
-function! ClearMatches() 
+function! ClearMatches()
    call clearmatches()
-   for [mgrp, val] in items(s:Matches) 
-         let s:Matches[mgrp]='false' 
-   endfor 
-endfunction 
+   for [mgrp, val] in items(s:Matches)
+         let s:Matches[mgrp]='false'
+   endfor
+endfunction
 
-function! NextMatch() 
-   for [mgrp, val] in items(s:Matches) 
-      if val == 'false' 
-         let s:Matches[mgrp]='true' 
-         return mgrp 
-      endif 
-   endfor 
-   return 'Match0' 
-endfunction 
+function! NextMatch()
+   for [mgrp, val] in items(s:Matches)
+      if val == 'false'
+         let s:Matches[mgrp]='true'
+         return mgrp
+      endif
+   endfor
+   return 'Match0'
+endfunction
 
-function! AddMatch(str) 
-   call matchadd(NextMatch(), a:str) 
-endfunction 
+function! AddMatch(str)
+   call matchadd(NextMatch(), a:str)
+endfunction
 
-nnoremap ym :call AddMatch('')<CR> 
-vnoremap m "zy:call AddMatch('z')<CR> 
+nnoremap ym :call AddMatch('')<CR>
+vnoremap m "zy:call AddMatch('z')<CR>
 nnoremap cm :call ClearMatches()<CR>
 "nnoremap dm :call DeleteMatch()<CR>
+" >>>
+
+" reverse lines <<<
+function! RevSelLines()
+   execute 'move'.eval(a:firstline-1)
+endfunction
 " >>>
 
 " toggle foldcolumn <<<
@@ -376,6 +391,24 @@ function! JumpToEnd()
 
 endfunction
 " >>>
+
+function! GetByteOffset() " <<<
+   return line2byte(line('.')) + col('.') - 1
+endfunction " >>>
+
+function! ShortenString(string, width, end) " <<<
+   let l:StringWidth = strwidth(a:string)
+
+   if l:StringWidth <= a:width
+      return a:string
+   else
+      if a:end == 'l' " left
+         return "…" . strpart(a:string, l:StringWidth-(a:width-1))
+      else            " right
+         return strpart(a:string, 0, (a:width-1)) . "…"
+      endif
+   endif
+endfunction " >>>
 
 " balloon & sign <<<
 let g:LuaExe="lua"
@@ -530,6 +563,80 @@ function! CleanUp()
       call delete(g:SignVimFile)
 endfunction
 " >>>
+
+" 1 optional parameter for the new regtype ("c", "l" or "v")
+" if omitted cycle through characterwise, linewise, blockwise
+" ChangeRegType <<<
+function! ChangeRegType(RegName, ...)
+
+   let l:CurRegType = getregtype(a:RegName)
+
+   if l:CurRegType == ""
+      echo "regtype for register " . a:RegName . " is unknown"
+      return
+   endif
+
+   " regtype name conversion for readabilty only
+   if l:CurRegType == "v"
+      let l:CurRegType = "c"
+   elseif l:CurRegType == "V"
+      let l:CurRegType = "l"
+   else
+      let l:CurRegType = "b"
+   endif
+
+   if a:0 == 0 " no new regtype passed to function
+
+      if l:CurRegType == "c"
+         let l:NewRegType = "l"
+      elseif l:CurRegType == "l"
+         let l:NewRegType = "b"
+      else
+         let l:NewRegType = "c"
+      endif
+
+   else
+      let l:NewRegType = a:1
+   endif
+
+   if (l:NewRegType != "c") && (l:NewRegType != "l") && (l:NewRegType != "b")
+      echo "the given regtype " . l:NewRegType . " is invalid
+      return
+   endif
+
+   echo "changing regtype for register " . a:RegName . " from " . l:CurRegType . " to " . l:NewRegType
+   call setreg(a:RegName, getreg(a:RegName), l:NewRegType)
+
+endfunction
+" >>>
+
+" ReArrangeColumns <<<
+function! ReArrangeColumns(delimiter, ...)
+
+   " echo a:delimiter
+   " echo a:000
+
+   if a:0 <= 1
+      return
+   endif
+
+   let l:Pattern = '\(.\{-}\)' . repeat(a:delimiter . '\(.\{-}\)', a:0 - 1) . '$'
+
+   let l:Replace = ''
+
+   for i in a:000
+      let l:Replace = l:Replace . a:delimiter . '\' . i
+   endfor
+
+   let l:Replace = strpart(l:Replace, 1)
+
+   " echo '%s/' . l:Pattern . '/' . l:Replace . '/'
+   silent execute '%s/' . l:Pattern . '/' . l:Replace . '/'
+
+endfunction
+" >>>
+
+command! -nargs=* ReArrangeColumns call ReArrangeColumns(<f-args>)
 " >>>
 
 " settings <<<
@@ -540,6 +647,7 @@ set nocursorcolumn
 set nocursorline
 set noerrorbells
 set nolinebreak
+set nojoinspaces
 set nosol
 set nolist
 set nospell
@@ -574,15 +682,14 @@ let g:TabSpace=3
 execute 'set tabstop='.g:TabSpace
 execute 'set softtabstop='.g:TabSpace
 set shiftwidth=0
-
 set belloff=all
 set encoding=utf-8
-set errorformat+=%f:%l:%c:\ %m
-set errorformat=luac:\ %f:%l:\ %m
+set errorformat=%f:%l:%c:\ %m
+set errorformat+=luac:\ %f:%l:\ %m
 set fillchars=vert:╏,fold:━
 set foldmarker=<<<,>>>
 set foldmethod=marker
-set grepprg=ag\ --vimgrep\ $*
+set grepprg=ag\ --nogroup\ --nocolor\ --vimgrep\ $*
 set grepformat=%f:%l:%c:%m
 set keywordprg=:help
 set laststatus=2
@@ -597,6 +704,7 @@ set spellsuggest=9
 set tags=.tags
 set textwidth=120
 set virtualedit=block
+"set whichwrap+=<,>,h,l
 
 function! Diff()
    " let l:opt = ''
@@ -630,6 +738,7 @@ augroup VIMRC
    autocmd BufEnter .vimrc,*.vim let C='"'
 
    autocmd BufEnter *.dox set filetype=c.doxygen
+   autocmd BufEnter *.vba set filetype=vb
    autocmd BufEnter *.py set noexpandtab
    autocmd BufLeave *.py set expandtab
    autocmd BufEnter makefile set noexpandtab
@@ -646,61 +755,13 @@ augroup END
 let g:colorizer_startup = 0
 " >>>
 " wildfire <<<
+" let g:wildfire_fuel_map  = "<ENTER>"
+" let g:wildfire_water_map = "<BS>"
 let g:wildfire_objects   = split("iw,iW,ip,i),a),i],a],i},a},i',a',i\",a\",it", ",")
 " >>>
 " align <<<
 let g:DrChipTopLvlMenu= "&Plugins.&Align."
 " >>>
-" >>>
-
-" gui vs. term <<<
-if has("gui_running")
-
-   set titlestring=%F
-   set balloonexpr=Balloon()
-   set noballooneval
-   set guioptions+=c
-   colorscheme molokai
-   "colorscheme soft-morning-light
-
-   " hi CursorLine guifg=#232526 guibg=#F92672
-
-   "hi MyBooleanTrue  guifg=green
-   "hi MyBooleanFalse guifg=red
-   "syn keyword MyBooleanTrue  yes on true enable high contained
-   "syn keyword MyBooleanFalse no off false disable low contained
-
-   hi red guifg=#F92672 guibg=#232526 gui=bold
-   hi grn guifg=#A6E22E guibg=#232526 gui=bold
-   hi org guifg=#FD971F guibg=#232526 gui=bold
-   hi blu guifg=#66D9EF guibg=#232526 gui=bold
-   hi ppl guifg=#AE81FF guibg=#232526 gui=bold
-   hi ylw guifg=#FFE345 guibg=#232526 gui=bold
-   hi wht guifg=#F8F8F0 guibg=#232526 gui=NONE
-
-   exe "set guifont=".s:myFontTypeList[s:myFontType].":h".s:myFontSizeList[s:myFontSize]
-
-else
-
-   set ttyfast
-   colorscheme default
-
-   hi red ctermfg=167 ctermbg=236 cterm=bold
-   hi grn ctermfg=143 ctermbg=236 cterm=bold
-   hi org ctermfg=173 ctermbg=236 cterm=bold
-   hi blu ctermfg=110 ctermbg=236 cterm=bold
-   hi ppl ctermfg=139 ctermbg=236 cterm=bold
-   hi ylw ctermfg=144 ctermbg=236 cterm=bold
-   hi wht ctermfg=15  ctermbg=236 cterm=NONE
-
-endif
-
-sign define E text=× texthl=red
-sign define W text=! texthl=org
-sign define I text=i texthl=blu
-sign define O text=✔ texthl=grn
-
-set statusline=%#org#CD=%#wht#%{getcwd()}%=%#ylw#SESSION=%#wht#%{GetFileName(v:this_session)}%#red#\ PERM=%#wht#%{getfperm(expand('%'))}\ %#red#FORMAT=%#wht#%{&ff}\ %#red#TYPE=%#wht#%Y\ %#ppl#SPELL=%#wht#%{&spelllang}\ %#grn#LINE=%#wht#%l/%L(%p%%)\ %#grn#COL=%#wht#%v\ %#grn#BYTE=%#wht#%o\ %#blu#DEC=%#wht#\%b\ %#blu#HEX=%#wht#\%B\ 
 " >>>
 " >>>
 
@@ -775,10 +836,10 @@ nnoremap öR [szz
 nnoremap är z=
 
 " Search
-vnoremap / y/"<CR>
-vnoremap ? y?"<CR>
-vnoremap # y/\<"\><CR>
-vnoremap * y/\<"\><CR>
+vnoremap / y/\V"<CR>
+vnoremap ? y/\V\<"\><CR>
+vnoremap * y/\V\<"<CR>
+vnoremap # y/\V"\><CR>
 
 " Buffer
 nnoremap ön :bn<CR>
@@ -814,6 +875,8 @@ inoremap <C-l> <Right>
 " Jumping
 nnoremap ök {zz
 nnoremap öj }zz
+nnoremap * *Nzz
+nnoremap # #Nzz
 nnoremap n nzz
 nnoremap N Nzz
 
@@ -843,8 +906,8 @@ nnoremap g. @:
 nnoremap gp '[v']
 nnoremap gr :r <cfile><CR>
 nnoremap gs :%s;;
-vnoremap gs :s;;
-
+vnoremap gs :s;\%V;
+vnoremap <C-o> <ESC>:let b:ByteOffset=GetByteOffset()<CR>`<:if(b:ByteOffset<=GetByteOffset())<BAR>let b:VisCmd=""<BAR>else<BAR>let b:VisCmd="o"<BAR>endif<CR>:exe "normal gv".b:VisCmd<CR>
 nnoremap co <C-o>
 " do
 " yo
@@ -885,6 +948,7 @@ nnoremap ü <C-w>
 cnoremap ü <C-r>
 nnoremap Q @q
 nnoremap Y y$
+vnoremap Y "+y
 nnoremap W e
 nnoremap B ge
 nnoremap ; ,
@@ -895,6 +959,7 @@ nnoremap äd :cd %:p:h<CR>
 inoremap <expr> <ESC> pumvisible() ? "\<C-e>" : "\<ESC>"
 inoremap <expr> <SPACE> pumvisible() ? "\<C-y>" : "\<SPACE>"
 inoremap <expr> <CR> pumvisible() ? "\<C-y>\<ESC>" : "\<CR>"
+
 inoremap <S-TAB> <C-V><TAB>
 inoremap <S-SPACE> <C-X><C-U>
 
@@ -908,6 +973,7 @@ nnoremap <SPACE> /
 nnoremap g<SPACE> *
 nnoremap g<CR> :nohl<CR>
 
+" nnoremap z<Space>
 " nnoremap g<TAB>
 " nnoremap z<TAB>
 " nnoremap ö<TAB>
@@ -924,7 +990,8 @@ nnoremap <F3> :call Panel('Sessions')<CR>
 nnoremap <F4> :call Panel('Tags')<CR>
 nnoremap <F5> :call Panel('Files')<CR>
 
-" nnoremap <F11> :!ltags -f .tags -R<CR>
+nnoremap <F10> :!ltags -f .tags -R<CR>
+nnoremap <F11> :!cscope -b -c -R<CR>
 nnoremap <F12> :!ctags --langmap=c:.c.h -f .tags -R --tag-relative=yes --extra=+fq --fields=+znimsStK --c-kinds=+lpx --sort=yes<CR>
 
 " Toggles And Cycles
@@ -994,7 +1061,7 @@ nnoremap -w :set wrap!<CR>:set wrap?<CR>
 " nnoremap -ü
 " nnoremap -ß
 
-" based on c,d,y + motions 
+" based on c,d,y + motions
 
 " dö
 " dü
@@ -1076,9 +1143,6 @@ vmenu &Utils.StripLines&Left :s;^\s\+;;<CR>
 
 " reverse lines 
 nmenu &Utils.&RevLines :g/^/m0
-function! RevSelLines()
-   execute 'move'.eval(a:firstline-1)
-endfunction
 vmenu &Utils.&RevLines :call RevSelLines()<CR>
 " vmenu &Utils.&RevLines2 <ESC>:let top=line("'<")-1<CR>:'<,'>:g/^/exec "m".top<CR>
 
@@ -1091,3 +1155,152 @@ vmenu &Utils.&Slash2BackSlash :s;/;\\;ge<CR>
 " hex, binary, octal, decimal, ... 
 " >>>
 
+" OS dependent settings <<<
+if has("macunix") " <<<
+" gui vs. term <<<
+if has("gui_running")
+
+   set titlestring=%F
+   set balloonexpr=Balloon()
+   set noballooneval
+   set guioptions+=c
+   colorscheme molokai
+   "colorscheme soft-morning-light
+
+   " hi CursorLine guifg=#232526 guibg=#F92672
+
+   "hi MyBooleanTrue  guifg=green
+   "hi MyBooleanFalse guifg=red
+   "syn keyword MyBooleanTrue  yes on true enable high contained
+   "syn keyword MyBooleanFalse no off false disable low contained
+
+   hi red guifg=#F92672 guibg=#232526 gui=bold
+   hi grn guifg=#A6E22E guibg=#232526 gui=bold
+   hi org guifg=#FD971F guibg=#232526 gui=bold
+   hi blu guifg=#66D9EF guibg=#232526 gui=bold
+   hi ppl guifg=#AE81FF guibg=#232526 gui=bold
+   hi ylw guifg=#FFE345 guibg=#232526 gui=bold
+   hi wht guifg=#F8F8F0 guibg=#232526 gui=NONE
+
+   exe "set guifont=".s:myFontTypeList[s:myFontType].":h".s:myFontSizeList[s:myFontSize]
+
+else
+
+   set ttyfast
+   colorscheme default
+
+   hi red ctermfg=167 ctermbg=236 cterm=bold
+   hi grn ctermfg=143 ctermbg=236 cterm=bold
+   hi org ctermfg=173 ctermbg=236 cterm=bold
+   hi blu ctermfg=110 ctermbg=236 cterm=bold
+   hi ppl ctermfg=139 ctermbg=236 cterm=bold
+   hi ylw ctermfg=144 ctermbg=236 cterm=bold
+   hi wht ctermfg=15  ctermbg=236 cterm=NONE
+
+endif
+
+" >>>
+
+endif " >>>
+
+if has("unix") " <<<
+endif " >>>
+
+if has("win32") " <<<
+   set viminfo+=nC:\\Users\\uid34241\\_viminfo
+   set directory=C:\Users\uid34241\AppData\Local\Temp
+   set backspace=2
+   set lines=999 columns=999
+   exe "set guifont=".s:myFontList[s:myFont].":h".s:myFontSizeList[s:myFontSize]
+   set guioptions-=T
+   set guioptions+=c
+   set guioptions+=!
+   set titlestring=%F
+   set balloonexpr=Balloon()
+   set noballooneval
+   "set balloonexpr=LintBalloon()
+   "let g:BalloonScript="lintballoon"
+   set grepprg=C:\LegacyApp\Cygwin\bin\ag.exe\ --nogroup\ --nocolor\ --vimgrep\ $* 
+   set grepformat=%f:%l:%c:%m
+   let g:agprg='C:\LegacyApp\Cygwin\bin\ag.exe --column'
+   "let Tlist_Ctags_Cmd='C:\LegacyApp\_my\tools\ctags\ctags.exe'
+
+   colorscheme molokai
+
+   hi Match0 guifg=White guibg=grey62
+   hi Match1 guifg=White guibg=DarkOrchid4
+   hi Match2 guifg=Black guibg=SkyBlue        gui=bold
+   hi Match3 guifg=Black guibg=OliveDrab2     gui=bold
+   hi Match4 guifg=Black guibg=coral1         gui=bold
+   hi Match5 guifg=Black guibg=plum           gui=bold
+   hi Match6 guifg=Black guibg=orange         gui=bold
+   hi Match7 guifg=White guibg=DeepSkyBlue4
+   hi Match8 guifg=White guibg=DarkOliveGreen
+   hi Match9 guifg=White guibg=firebrick4
+
+   hi red guifg=#F92672 guibg=#232526 gui=bold
+   hi grn guifg=#A6E22E guibg=#232526 gui=bold
+   hi org guifg=#FD971F guibg=#232526 gui=bold
+   hi blu guifg=#66D9EF guibg=#232526 gui=bold
+   hi ppl guifg=#AE81FF guibg=#232526 gui=bold
+   hi wht guifg=#F8F8F0 guibg=#232526 gui=NONE
+
+   hi CheckMark guifg=#40C020
+   syn match CheckMark |✓|
+   syn match CheckMark |\<V\>|
+   " inoremap vv ✓
+
+   hi Ballot guifg=#C03030
+   syn match Ballot |✗|
+   syn match Ballot |\<X\>|
+   " inoremap xx ✗
+endif " >>>
+
+if has("win32unix") " <<<
+   " for mode dependent cursor shape
+   let &t_ti.="\e[1 q"
+   let &t_SI.="\e[5 q"
+   let &t_EI.="\e[1 q"
+   let &t_te.="\e[0 q"
+
+   " for Escape timeout issues
+   let &t_ti.="\e[?7727h"
+   let &t_te.="\e[?7727l"
+   noremap <Esc>O[ <Esc>
+   noremap! <Esc>O[ <Esc>
+
+   set directory=/tmp
+   set ttyfast
+   set grepprg=ag\ --nogroup\ --nocolor\ --vimgrep\ $* 
+   set grepformat=%f:%l:%c:%m
+
+   colorscheme jellybeans
+
+   "hi Grep0 ctermfg=White ctermbg=grey62
+   "hi Grep1 ctermfg=White ctermbg=DarkOrchid4
+   "hi Grep2 ctermfg=Black ctermbg=SkyBlue        cterm=bold
+   "hi Grep3 ctermfg=Black ctermbg=OliveDrab2     cterm=bold
+   "hi Grep4 ctermfg=Black ctermbg=coral1         cterm=bold
+   "hi Grep5 ctermfg=Black ctermbg=plum           cterm=bold
+   "hi Grep6 ctermfg=Black ctermbg=orange         cterm=bold
+   "hi Grep7 ctermfg=White ctermbg=DeepSkyBlue4
+   "hi Grep8 ctermfg=White ctermbg=DarkOliveGreen
+   "hi Grep9 ctermfg=White ctermbg=firebrick4
+
+   hi red ctermfg=167 ctermbg=236 cterm=bold
+   hi grn ctermfg=143 ctermbg=236 cterm=bold
+   hi org ctermfg=173 ctermbg=236 cterm=bold
+   hi blu ctermfg=110 ctermbg=236 cterm=bold
+   hi ppl ctermfg=139 ctermbg=236 cterm=bold
+   hi wht ctermfg=15  ctermbg=236 cterm=NONE
+endif " >>>
+
+sign define E text=× texthl=red
+sign define W text=! texthl=org
+sign define I text=i texthl=blu
+sign define O text=✔ texthl=grn
+
+set statusline=%#org#CD=%#wht#%{getcwd()}%=%#ylw#SESSION=%#wht#%{GetFileName(v:this_session)}%#red#\ PERM=%#wht#%{getfperm(expand('%'))}\ %#red#FORMAT=%#wht#%{&ff}\ %#red#TYPE=%#wht#%Y\ %#ppl#SPELL=%#wht#%{&spelllang}\ %#grn#LINE=%#wht#%l/%L(%p%%)\ %#grn#COL=%#wht#%v\ %#grn#BYTE=%#wht#%o\ %#blu#DEC=%#wht#\%b\ %#blu#HEX=%#wht#\%B\ 
+" set statusline=%#org#Clip=%#wht#%{ShortenString(getreg('\"'),30,'r')}%=%#red#\ PERM=%#wht#%{getfperm(expand('%'))}\ %#red#FORMAT=%#wht#%{&ff}\ %#red#TYPE=%#wht#%Y\ \ %#ppl#SPELL=%#wht#%{&spelllang}\ \ %#grn#LINE=%#wht#%l/%L(%p%%)\ %#grn#COL=%#wht#%v\ %#grn#BYTE=%#wht#%o\ \ %#blu#DEC=%#wht#\%b\ %#blu#HEX=%#wht#\%B\ 
+" set statusline=%#org#CD=%#wht#%{getcwd()}%=%#red#\ PERM=%#wht#%{getfperm(expand('%'))}\ %#red#FORMAT=%#wht#%{&ff}\ %#red#TYPE=%#wht#%Y\ \ %#ppl#SPELL=%#wht#%{&spelllang}\ \ %#grn#LINE=%#wht#%l/%L(%p%%)\ %#grn#COL=%#wht#%v\ %#grn#BYTE=%#wht#%o\ \ %#blu#DEC=%#wht#\%b\ %#blu#HEX=%#wht#\%B\ 
+" >>>
