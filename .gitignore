@@ -1,3 +1,4 @@
 .vim/.VimballRecord
 .vim/.netrwhist
 .vim/sessions/*
+.vim/undodir/*
