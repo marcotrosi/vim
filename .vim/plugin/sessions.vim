@@ -46,7 +46,7 @@ function! SessionOpen() " <<<
    exec 'silent! %bwipeout!'
    let l:n = bufnr('%')
    exec 'silent! so ' . l:SessionFile
-   exec 'silent! bwipeout! ' . l:n
+   " exec 'silent! bwipeout! ' . l:n
    set eventignore=
    doautoall BufRead
    doautoall FileType
