@@ -16,6 +16,8 @@ let s:options['global'] = [
   \ ['and', 'or'],
   \ ['if', 'unless'],
   \ ['true', 'false'],
+  \ ['True', 'False'],
+  \ ['TRUE', 'FALSE'],
   \ ['YES', 'NO'],
   \ ['on', 'off'],
   \ ['first', 'last'],
@@ -217,7 +219,9 @@ nnoremap <silent> <Plug>CycleNext     :<C-U>call <SID>Cycle(1)<CR>
 nnoremap <silent> <Plug>CyclePrevious :<C-U>call <SID>Cycle(-1)<CR>
 
 if !exists("g:cycle_no_mappings") || !g:cycle_no_mappings
-  nmap  <C-A>     <Plug>CycleNext
-  nmap  <C-X>     <Plug>CyclePrevious
+  nmap  ++     <Plug>CycleNext
+  nmap  --     <Plug>CyclePrevious
+  " nmap  <C-A>     <Plug>CycleNext
+  " nmap  <C-X>     <Plug>CyclePrevious
 endif
 
