@@ -1549,7 +1549,7 @@ nnoremap -h :if exists("g:syntax_on") <BAR> syntax off <BAR> else <BAR> syntax o
 " nnoremap -i
 " nnoremap -j
 nnoremap -k :if &keywordprg == ":help" <BAR> set keywordprg=man <BAR> echo "keywordprg=man" <BAR> else <BAR> set keywordprg=:help <BAR> echo "keywordprg=:help" <BAR> endif <CR>
-nnoremap -l :set list!<CR>:set list?<CR>
+nnoremap -l :setlocal list!<CR>:setlocal list?<CR>
 nnoremap -m :set cursorcolumn! <BAR> set cursorline!<CR>
 nnoremap -n :set number!<CR>
 " nnoremap -o
