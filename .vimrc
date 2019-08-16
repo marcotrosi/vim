@@ -14,11 +14,11 @@ endf
 " cycle colorschemes <<<
 let s:myColorscheme = 0
 let s:myColorschemeList  = []
-   if has("win32")
-      let s:myColorschemeFiles = globpath($VIM . '\vimfiles\colors', "*.vim", 0, 1)      
-   else
-      let s:myColorschemeFiles = globpath("~/.vim/colors", "*.vim", 0, 1)
-   endif
+if has("win32")
+   let s:myColorschemeFiles = globpath($VIM . '\vimfiles\colors', "*.vim", 0, 1)      
+else
+   let s:myColorschemeFiles = globpath("~/.vim/colors", "*.vim", 0, 1)
+endif
 
 for cs in s:myColorschemeFiles
    if has("win32")
@@ -736,8 +736,7 @@ function! EditReg(reg)
       setlocal nospell
       execute 'setlocal statusline=editing\ register\ \"'.a:reg.'\ \|\ <CR>\ to\ confirm\ changes\ \|\ <ESC>\ or\ q\ to\ discard\ changes'
       setlocal noruler
-      execute 'normal! z'.line('$').'
-ggG'
+      execute 'normal! z'.line('$').'ggG'
       startinsert!
    endif
 
@@ -840,6 +839,133 @@ function! VisualBlock(a, sep)
 
 endfunction
 " >>>
+
+" get next non-blank line <<<
+function! GetNextNonBlankLine()
+   let l:LineNum = line(".")
+   while v:true
+      if getline(l:LineNum) !~ '^\s*$'
+         return l:LineNum
+      endif
+      let l:LineNum = l:LineNum + 1
+      if l:LineNum > line("$")
+         return -1
+      endif
+   endwhile
+endfunction " >>>
+
+" get previous non-blank line <<<
+function! GetPrevNonBlankLine()
+   let l:LineNum = line(".")
+   while v:true
+      if getline(l:LineNum) !~ '^\s*$'
+         return l:LineNum
+      endif
+      let l:LineNum = l:LineNum - 1
+      if l:LineNum < 1
+         return -1
+      endif
+   endwhile
+endfunction " >>>
+
+" indented text object <<<
+function! IndTxtObj(inner, zeroindent)
+
+   " find first non-blank line with highest indent <<<
+   let l:StartLine = line(".")
+   if getline(l:StartLine) =~ '^\s*$'
+      let l:PrevLine = GetPrevNonBlankLine()
+      let l:NextLine = GetNextNonBlankLine()
+      if (l:PrevLine == -1) && (l:NextLine == -1)
+         return
+      endif
+      if (l:PrevLine == -1)
+         let l:StartLine = l:NextLine
+      elseif (l:NextLine == -1)
+         let l:StartLine = l:PrevLine
+      else
+         if indent(l:NextLine) >= indent(l:PrevLine)
+            let l:StartLine = l:NextLine
+         else
+            let l:StartLine = l:PrevLine
+         endif
+      endif
+   endif
+   " >>>
+
+   " get current indentation <<<
+   let l:StartIndent = indent(l:StartLine)
+   " echo l:StartLine
+   " echo l:StartIndent
+   " >>>
+
+   " find upper line <<<
+   let l:UpperLine = l:StartLine
+   while v:true
+      let l:LastUpperLine = l:UpperLine
+      let l:UpperLine     = l:UpperLine - 1
+      if l:UpperLine < 1
+         let l:UpperLine = 1
+         break
+      endif
+      if getline(l:UpperLine) =~ '^\s*$'
+         continue
+      endif
+      let l:UpperIndent = indent(l:UpperLine)
+      if a:zeroindent
+         if l:UpperIndent == 0
+            if a:inner
+               let l:UpperLine = l:LastUpperLine
+            endif
+            break
+         endif
+      else
+         if l:UpperIndent < l:StartIndent
+            if a:inner
+               let l:UpperLine = l:LastUpperLine
+            endif
+            break
+         endif
+      endif
+   endwhile
+   " >>>
+
+   " find lower line <<<
+   let l:LowerLine = l:StartLine
+   while v:true
+      let l:LastLowerLine = l:LowerLine
+      let l:LowerLine     = l:LowerLine + 1
+      if l:LowerLine > line("$")
+         let l:LowerLine = line("$")
+         break
+      endif
+      if getline(l:LowerLine) =~ '^\s*$'
+         continue
+      endif
+      let l:LowerIndent = indent(l:LowerLine)
+      if a:zeroindent
+         if l:LowerIndent == 0
+            if a:inner
+               let l:LowerLine = l:LastLowerLine
+            endif
+            break
+         endif
+      else
+         if l:LowerIndent < l:StartIndent
+            if a:inner
+               let l:LowerLine = l:LastLowerLine
+            endif
+            break
+         endif
+      endif
+   endwhile
+   " >>>
+   
+   call cursor(l:UpperLine, 1)
+   normal! V
+   call cursor(l:LowerLine, 1)
+
+endfunction " >>>
 
 " UNDER DEVELOPMENT <<<
 function! GetVisualSelection() " <<<
@@ -1013,6 +1139,8 @@ command! -range -nargs=* ReArrangeColumns <line1>,<line2>call ReArrangeColumns(<
 command! -nargs=1 Grep call Grep('<args>')
 command! -range -nargs=0 Sum echo Sum(ExtractNumbersFromString(GetVisualSelection()))
 command! -range=% -nargs=? -complete=file New silent <line1>,<line2>yank x | enew | put! x | $d_ | if(<q-args> != '') | silent write <args> | endif
+command! E silent! !explorer .
+command! F silent! !open .
 " :w !cat - >> /foo/samples
 " >>>
 
@@ -1125,7 +1253,7 @@ augroup VIMRC
 
    autocmd BufEnter *.c,*.h let C='//' | let g:FunctionPattern_s = '\s\(\w\+\)(.\{-})\s*$'
    autocmd BufEnter *.lua let C='--' | let g:FunctionPattern_s = '\sfunction\s\+\(\w\+\)'
-   " autocmd FileType lua setlocal iskeyword+=:
+   "autocmd FileType lua setlocal iskeyword+=:
    autocmd BufEnter *.tex let C='%'
    autocmd BufEnter makefile,*.py,*.pl let C='#'
    autocmd BufEnter .vimrc,*.vim let C='"' | let g:FunctionPattern_s = '^function!\s\+\(\w\+\)'
@@ -1139,15 +1267,15 @@ augroup VIMRC
 
    autocmd BufEnter makefile set noexpandtab
    autocmd BufLeave makefile set expandtab
-"  autocmd BufWritePre * call FixFile()
+   "autocmd BufWritePre * call FixFile()
 
    autocmd VimLeavePre * call CleanUp()
    autocmd ColorScheme * call DefMatchColors() " TODO temporary til part of colorschemes
    "autocmd WinLeave * let g:prevwin=win_getid()
    "autocmd BufWritePost .crontab !crontab ~/.crontab
 
-   " set completefunc=LatexFont
-   " set completefunc=UserCompletion
+   "set completefunc=LatexFont
+   "set completefunc=UserCompletion
 
 augroup END
 " >>>
@@ -1385,18 +1513,23 @@ nnoremap g<CR> :nohl<CR>
 "nnoremap g<CR> :set hls!<CR>
 " >>>
 " Buffer <<<
-nnoremap ön :bn<CR>
-nnoremap öh :bp<CR>
+" nnoremap ön :bn<CR>
+" nnoremap öh :bp<CR>
+nnoremap ön :enew<CR>
+nnoremap öN :tabnew<CR>
+nnoremap öh :tabp<CR>
+nnoremap öl :tabn<CR>
 nnoremap öj :bn<CR>
 nnoremap ök :bp<CR>
 
-nnoremap öb :ls<CR>:b<SPACE>
-nnoremap öl :call Panel('Buffers')<CR>
+" nnoremap öb :ls<CR>:b<SPACE>
+" nnoremap öl :call Panel('Buffers')<CR>
+nnoremap öb :call Panel('Buffers')<CR>
 nnoremap ö<SPACE> :b#<CR>
 nnoremap öw :w!<CR>
 nnoremap öd :bd!<CR>
 nnoremap öD :silent %bd<BAR>e#<CR>
-nnoremap <C-n> :enew<CR>
+" nnoremap <C-n> :enew<CR>
 nnoremap öx :%d<CR>
 nnoremap öu :e!<CR>
 " >>>
@@ -1568,6 +1701,17 @@ nnoremap -w :set wrap!<CR>:set wrap?<CR>
 " nnoremap -ö
 " nnoremap -ü
 nnoremap -<TAB> :set expandtab!<CR>:set expandtab?<CR>
+" >>>
+" Text Objects <<<
+onoremap <silent>ai :<C-U>call IndTxtObj(0, 0)<CR>
+onoremap <silent>ii :<C-U>call IndTxtObj(1, 0)<CR>
+vnoremap <silent>ai :<C-U>call IndTxtObj(0, 0)<CR><Esc>gv
+vnoremap <silent>ii :<C-U>call IndTxtObj(1, 0)<CR><Esc>gv
+
+onoremap <silent>aI :<C-U>call IndTxtObj(0, 1)<CR>
+onoremap <silent>iI :<C-U>call IndTxtObj(1, 1)<CR>
+vnoremap <silent>aI :<C-U>call IndTxtObj(0, 1)<CR><Esc>gv
+vnoremap <silent>iI :<C-U>call IndTxtObj(1, 1)<CR><Esc>gv
 " >>>
 " Misc <<<
 nnoremap gG ggVG
