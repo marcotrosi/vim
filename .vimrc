@@ -388,8 +388,8 @@ function! JumpToFLC()
 endfunction
 " >>>
 
-" jump to start <<<
-function! JumpToSOL()
+" jump to start of line <<<
+function! JumpToStartOfLine()
 
    let l:CurCol = col(".")
 
@@ -402,8 +402,8 @@ function! JumpToSOL()
 endfunction
 " >>>
 
-" jump to end <<<
-function! JumpToEOL()
+" jump to end line <<<
+function! JumpToEndOfLine()
 
    let l:CurCol = col(".")
    let l:EndCol = col("$")-1
@@ -967,6 +967,19 @@ function! IndTxtObj(inner, zeroindent)
 
 endfunction " >>>
 
+" grep <<<
+function! Grep(args)
+   exec 'silent lgrep ' . a:args
+   lopen
+endfunction " >>>
+
+" grep buffers <<<
+function! GrepBuffers(args)
+   call setloclist(winnr(), [])
+   exec 'bufdo silent lgrepadd ' . a:args
+   lopen
+endfunction " >>>
+
 " UNDER DEVELOPMENT <<<
 function! GetVisualSelection() " <<<
     silent! normal! gv"xy
@@ -1347,7 +1360,7 @@ let g:DrChipTopLvlMenu= "&Plugins.&Align."
 " inoremap <C-CR> c-cr
 " >>>
 
-" nnoremap z<Space>
+" nnoremap z<SPACE>
 " nnoremap g<TAB>
 " nnoremap z<TAB>
 " nnoremap ö<TAB>
@@ -1412,8 +1425,8 @@ let g:DrChipTopLvlMenu= "&Plugins.&Align."
 " >>>
 " by topic <<<
 " Align <<<
-xnoremap öa :Align<Space>
-nnoremap öa vip:Align<Space>
+xnoremap öa :Align<SPACE>
+nnoremap öa vip:Align<SPACE>
 nnoremap äa :call SetAlignCtrl()<CR>
 " >>>
 " Increment <<<
@@ -1431,7 +1444,7 @@ nnoremap ++ <C-a>
 nnoremap -- <C-x>
 " >>>
 " Tags <<<
-" nnoremap gt :tag<Space>
+" nnoremap gt :tag<SPACE>
 nnoremap öt :call Panel('Tags')<CR>
 nnoremap öö g<C-]>zz
 nnoremap ää <C-t>zz
@@ -1444,38 +1457,33 @@ nnoremap <F12> :!ctags --langmap=c:.c.h -f .tags -R --tag-relative=yes --extra=+
 " >>>
 " Grep <<<
 " TODO: test with regex searches
-function! Grep(args)
-   exec 'silent lgrep ' . a:args
-   lopen
-endfunction
+let g:RgHint="rg [options] pattern [path, ...]\n
+             \-w whole words \| -i case insensitive \| -v invert match \| -e regex\n
+             \-F literally \| --hidden search hidden files \| -t type -T non-type\n
+             \--max-depth NUM \| -A NUM after \| -B NUM before \| -C NUM context"
 
+nnoremap ög :echo g:RgHint<CR>:Grep<SPACE>
 
-let g:AgHint="ag [options] pattern [%, path, ...]\n
-             \-s case sensitive \| -i case insensitive (dflt) \| -n no recurse \| -r recursive (dflt)\n
-             \-w whole words \| -Q literally \| --hidden search hidden files \| -g find files"
+nnoremap gö :call Grep('-F -w "' . expand('<cword>') . '" %')<CR>
+nnoremap gÖ :call Grep('-F -i "' . expand('<cword>') . '" %')<CR>
+xnoremap gö "gy:call Grep('-F -w "' . getreg('g') . '" %')<CR>
+xnoremap gÖ "gy:call Grep('-F -i "' . getreg('g') . '" %')<CR>
 
-nnoremap ög :echo g:AgHint<CR>:Grep<SPACE>
+nnoremap gd :call Grep('-F -w "' . expand('<cword>') . '"')<CR>
+nnoremap gD :call Grep('-F -i "' . expand('<cword>') . '"')<CR>
+xnoremap gd "gy:call Grep('-F -w "' . getreg('g') . '"')<CR>
+xnoremap gD "gy:call Grep('-F -i "' . getreg('g') . '"')<CR>
 
-nnoremap gb :call Grep('-Q -w -s ' . expand('<cword>') . ' %')
-nnoremap gB :call Grep('-Q '       . expand('<cword>') . ' %')
-
-nnoremap gd :call Grep('-Q -w -s ' . expand('<cword>'))
-nnoremap gD :call Grep('-Q '       . expand('<cword>'))
-
-function! GrepBuffers(args)
-   call setloclist(winnr(), [])
-   let l:CWord = expand('<cword>')
-   exec 'bufdo silent lgrepadd ' . a:args . ' ' . l:CWord . ' %'
-   lopen
-endfunction
+nnoremap gb :call GrepBuffers('-F -w "' . expand('<cword>') . '" %')<CR>
+nnoremap gB :call GrepBuffers('-F -i "' . expand('<cword>') . '" %')<CR>
+nnoremap gb "gy:call GrepBuffers('-F -w "' . getreg('g') . '" %')<CR>
+nnoremap gB "gy:call GrepBuffers('-F -i "' . getreg('g') . '" %')<CR>
 
 nnoremap ym :call AddMatch('')<CR>
-xnoremap m "zy:call AddMatch('z')<CR>
+xnoremap m "my:call AddMatch('m')<CR>
 nnoremap cm :call ClearMatches()<CR>
-"nnoremap dm :call DeleteMatch()<CR>
+"nnoremap dm :call DeleteMatch()<CR> " TODO: store ID from matchadd
 
-" nnoremap ga :call GrepBuffers('-Q -w -s ')<CR>
-" nnoremap gA :call GrepBuffers('-Q ')<CR>
 " >>>
 " QuickFix And Location List <<<
 nnoremap öe :call ToggleQuickFix()<CR>
@@ -1508,28 +1516,22 @@ xnoremap ? y/\V\<"\><CR>
 xnoremap * y/\V\<"<CR>
 xnoremap # y/\V"\><CR>
 nnoremap <SPACE> /
+nnoremap <C-SPACE> /\c
 nnoremap g<SPACE> *N
-nnoremap g<CR> :nohl<CR>
-"nnoremap g<CR> :set hls!<CR>
+nnoremap ch :nohl<CR>
 " >>>
 " Buffer <<<
-" nnoremap ön :bn<CR>
-" nnoremap öh :bp<CR>
 nnoremap ön :enew<CR>
 nnoremap öN :tabnew<CR>
 nnoremap öh :tabp<CR>
 nnoremap öl :tabn<CR>
 nnoremap öj :bn<CR>
 nnoremap ök :bp<CR>
-
-" nnoremap öb :ls<CR>:b<SPACE>
-" nnoremap öl :call Panel('Buffers')<CR>
 nnoremap öb :call Panel('Buffers')<CR>
 nnoremap ö<SPACE> :b#<CR>
 nnoremap öw :w!<CR>
 nnoremap öd :bd!<CR>
 nnoremap öD :silent %bd<BAR>e#<CR>
-" nnoremap <C-n> :enew<CR>
 nnoremap öx :%d<CR>
 nnoremap öu :e!<CR>
 " >>>
@@ -1546,20 +1548,21 @@ inoremap <C-k> <Up>
 inoremap <C-j> <Down>
 inoremap <C-h> <Left>
 inoremap <C-l> <Right>
-nnoremap H :call JumpToSOL()<CR>
-nnoremap L :call JumpToEOL()<CR>
-nnoremap 0 :call JumpToSOL()<CR>
-nnoremap ß :call JumpToEOL()<CR>
-nnoremap $ :call JumpToEOL()<CR>
+nnoremap H :call JumpToStartOfLine()<CR>
+nnoremap L :call JumpToEndOfLine()<CR>
+nnoremap 0 :call JumpToStartOfLine()<CR>
+nnoremap ß :call JumpToEndOfLine()<CR>
+nnoremap $ :call JumpToEndOfLine()<CR>
 nnoremap W e
 nnoremap B ge
-" nnoremap ; ,
-" nnoremap , ;
-nnoremap <expr> , getcharsearch().forward ? ';' : ','
-nnoremap <expr> ; getcharsearch().forward ? ',' : ';'
+nnoremap ; ,
+nnoremap , ;
+" nnoremap <expr> , getcharsearch().forward ? ';' : ','
+" nnoremap <expr> ; getcharsearch().forward ? ',' : ';'
 nnoremap co <C-o>
 xnoremap <C-o> <ESC>:let b:ByteOffset=GetByteOffset()<CR>`<:if(b:ByteOffset<=GetByteOffset())<BAR>let b:VisCmd=""<BAR>else<BAR>let b:VisCmd="o"<BAR>endif<CR>:exe "normal gv".b:VisCmd<CR>
 nnoremap ü <C-w>
+tnoremap ü <C-w>
 " >>>
 " Shift Lines <<<
 nnoremap <S-Up>   kddpk
@@ -1631,10 +1634,14 @@ inoremap äu <C-x><C-u>
 inoremap äo <C-x><C-o>
 
 " add date/time
-inoremap äh <C-R>=strftime("%Y-%m-%d")<CR>
-inoremap äH <C-R>=strftime("%d. %B %Y")<CR>
-inoremap äj <C-R>=strftime("%I:%M")<CR>
-inoremap äJ <C-R>=strftime("%Y-%m-%d_%I-%M")<CR>
+" äj 2019-08-21
+" äh 2019-08-21T14:38
+" äJ 21. August 2019
+" äH 14:38
+inoremap äj <C-R>=strftime("%Y-%m-%d")<CR>
+inoremap äh <C-R>=strftime("%Y-%m-%dT%H:%M")<CR>
+inoremap äJ <C-R>=strftime("%d. %B %Y")<CR>
+inoremap äH <C-R>=strftime("%H:%M")<CR>
 " >>>
 " Cycle Settings <<<
 " nnoremap +a
@@ -1736,14 +1743,15 @@ nnoremap öc :call PanelClose()<CR>
 nnoremap zq :qa!<CR>
 nnoremap cq :%s///gn<CR>
 nnoremap cQ :%s///gn<CR>
-nnoremap <S-SPACE> i<SPACE><ESC>
+nnoremap <S-SPACE> i<SPACE><ESC>l
 nnoremap <S-CR> o<ESC>0D
+nnoremap g<CR> r<CR>kddpk==
 nnoremap <C-CR> i<CR><ESC>
-nnoremap <M-CR> r<CR>kddpk==
-inoremap <S-SPACE> <C-X><C-U>
+nnoremap g<C-CR> i<CR><ESC>kddpk==
 inoremap ö <ESC>
 cnoremap ö <ESC>
-cnoremap <S-SPACE> <C-R><C-A>
+cnoremap <S-SPACE> <C-R><C-W>
+cnoremap <C-SPACE> <C-R><C-A>
 " >>>
 " >>>
 " UNDER DEVELOPMENT <<<
@@ -1841,15 +1849,13 @@ endif " >>>
 " Windows <<<
 if has("win32")
 
-   set viminfo+=nC:\\Users\\uid34241\\_viminfo
-   set directory=C:\Users\uid34241\AppData\Local\Temp
+   set viminfofile=D:\\DSUsers\\uid34241\\tools\\vim\\.viminfo
+   set directory=$USERPROFILE\AppData\Local\Temp
    set backspace=2
    set lines=999 columns=999
 
-   set grepprg=C:\LegacyApp\Cygwin\bin\ag.exe\ --nogroup\ --nocolor\ --vimgrep\ $* 
+   set grepprg=D:\Tools\cygwin\usr\local\bin\rg.exe\ --vimgrep\ $*
    set grepformat=%f:%l:%c:%m
-   let g:agprg='C:\LegacyApp\Cygwin\bin\ag.exe --column'
-   "let Tlist_Ctags_Cmd='C:\LegacyApp\_my\tools\ctags\ctags.exe'
 
    if has("gui_running")
 
