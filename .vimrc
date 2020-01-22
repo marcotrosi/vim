@@ -980,6 +980,12 @@ function! GrepBuffers(args)
    lopen
 endfunction " >>>
 
+" find <<<
+function! Find(args)
+   lexpr! system('fd --type f ' . a:args)
+   lopen
+endfunction " >>>
+
 " UNDER DEVELOPMENT <<<
 function! GetVisualSelection() " <<<
     silent! normal! gv"xy
@@ -1150,6 +1156,7 @@ command! -range Right  call AlignBlock('r')
 command! -nargs=1 EditReg call EditReg(<f-args>)
 command! -range -nargs=* ReArrangeColumns <line1>,<line2>call ReArrangeColumns(<f-args>)
 command! -nargs=1 Grep call Grep('<args>')
+command! -nargs=? Find call Find('<args>')
 command! -range -nargs=0 Sum echo Sum(ExtractNumbersFromString(GetVisualSelection()))
 command! -range=% -nargs=? -complete=file New silent <line1>,<line2>yank x | enew | put! x | $d_ | if(<q-args> != '') | silent write <args> | endif
 command! E silent! !explorer .
@@ -1189,6 +1196,7 @@ set incsearch
 set lazyredraw
 set magic
 set ruler
+set shiftround
 set showcmd
 set showmode
 set wildmenu
@@ -1210,7 +1218,9 @@ set belloff=all
 " set completeopt=menu,preview
 set directory=~/.vim/swapdir,/tmp
 set encoding=utf-8
-set errorformat=%f:%l:%c:\ %m
+set errorformat=%f\ %l\ %m
+set errorformat+=%f:%l:%c:\ %m
+set errorformat+=%f
 set errorformat+=luac:\ %f:%l:\ %m
 set fillchars=vert:╏,fold:━
 set foldmarker=<<<,>>>
@@ -1309,121 +1319,6 @@ let g:DrChipTopLvlMenu= "&Plugins.&Align."
 " >>>
 
 " mappings <<<
-" alphabetically - comments only <<<
-
-" do
-" yo
-
-" cs -> surround
-" ds -> surround
-" ys -> surround
-
-" gb
-" gc -> tcomment plugin
-" gl
-" gy
-" gz
-
-" gö
-" gä
-" gü
-" gß
-" öb
-" ög
-" öF
-" öB
-" öG
-
-" zp -> fold put
-" zy
-
-" zö
-" zä
-" zü
-" zß
-
-
-
-" dangerous insert and command mode mappings <<<
-" cnoremap <C-SPACE> <C-R>"
-
-
-" the following keys are potentially available
-" inoremap <TAB> tab
-" inoremap <S-TAB> s-tab        -> currently broken by snipmate
-" inoremap <C-TAB> c-tab        -> currently broken by snipmate
-" inoremap <S-SPACE> s-space
-" inoremap <C-SPACE> c-space
-" inoremap <S-BS> s-bs
-" inoremap <C-BS> c-bs
-" inoremap <S-CR> s-cr
-" inoremap <C-CR> c-cr
-" >>>
-
-" nnoremap z<SPACE>
-" nnoremap g<TAB>
-" nnoremap z<TAB>
-" nnoremap ö<TAB>
-" nnoremap ä<TAB>
-" nnoremap ü<TAB> -> ü is used for Ctrl-w
-" nnoremap Ctrl-w {   tag jump in split window
-
-
-" based on c,d,y + motions
-
-" dö
-" dü
-" dä
-" cö
-" cä
-" cü
-" yö
-" yä
-" yü
-" dß
-" cß
-" yß
-" m  -> match commands
-" o -> co <C-o>
-" p
-" cp -> close project
-" q
-
-" r
-" nnoremap dr
-" nnoremap yr
-" s -> surround.vim 
-" u
-" v    ??? 
-" x
-" y
-" z    ??? 
-" A
-" C
-" D
-" I
-" J
-" K
-" O
-" P
-" Q
-" R
-" S -> surround.vim 
-" U
-" V    ???
-" X
-" Y
-" Z
-
-" based on v + motions
-" xnoremap a
-" xnoremap i
-" xnoremap m
-" xnoremap Q
-" xnoremap Z
-" some more can be seen as FREE as it's questionable if they are useful
-" >>>
-" by topic <<<
 " Align <<<
 xnoremap öa :Align<SPACE>
 nnoremap öa vip:Align<SPACE>
@@ -1753,8 +1648,8 @@ cnoremap ö <ESC>
 cnoremap <S-SPACE> <C-R><C-W>
 cnoremap <C-SPACE> <C-R><C-A>
 " >>>
-" >>>
 " UNDER DEVELOPMENT <<<
+inoremap Ö <C-v>
 nnoremap öL :call LaTeXMenu("viw")<CR>
 xnoremap öL :call LaTeXMenu("gv")<CR>
 
@@ -1947,16 +1842,16 @@ else
    hi ylw ctermfg=144 ctermbg=236 cterm=bold
    hi wht ctermfg=15  ctermbg=236 cterm=NONE
 
-   " hi Match0 guifg=White guibg=grey62
-   " hi Match1 guifg=White guibg=DarkOrchid4
-   " hi Match2 guifg=Black guibg=SkyBlue        gui=bold
-   " hi Match3 guifg=Black guibg=OliveDrab2     gui=bold
-   " hi Match4 guifg=Black guibg=coral1         gui=bold
-   " hi Match5 guifg=Black guibg=plum           gui=bold
-   " hi Match6 guifg=Black guibg=orange         gui=bold
-   " hi Match7 guifg=White guibg=DeepSkyBlue4
-   " hi Match8 guifg=White guibg=DarkOliveGreen
-   " hi Match9 guifg=White guibg=firebrick4
+   hi Match0 ctermfg=White ctermbg=1
+   hi Match1 ctermfg=White ctermbg=2
+   hi Match2 ctermfg=Black ctermbg=3
+   hi Match3 ctermfg=Black ctermbg=4
+   hi Match4 ctermfg=Black ctermbg=5
+   hi Match5 ctermfg=Black ctermbg=6
+   hi Match6 ctermfg=Black ctermbg=7
+   hi Match7 ctermfg=White ctermbg=8
+   hi Match8 ctermfg=White ctermbg=9
+   hi Match9 ctermfg=White ctermbg=10
 
 endif " >>>
 
