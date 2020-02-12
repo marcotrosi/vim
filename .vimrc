@@ -1,3 +1,9 @@
+" __   _____ __  __ ___  ___
+" \ \ / /_ _|  \/  | _ \/ __|
+"  \ V / | || |\/| |   / (__
+"   \_/ |___|_|  |_|_|_\\___|
+"                  marcotrosi
+
 " functions <<<
 
 " cycle spellcheck languages <<<

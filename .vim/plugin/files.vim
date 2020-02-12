@@ -138,9 +138,16 @@ function! FoldDirs() " <<<
 endfunction " >>>
 
 function! DirUp() " <<<
-   if s:TopDir != '/'
-      let s:TopDir = Slash('/'.join(split(s:TopDir, '/')[0:-2], '/')) " TODO think about making a function in path.vim
-      call PanelUpdate()
+   if has("win32")
+      if match(s:TopDir, '^\w:$') == -1
+         let s:TopDir = Slash(join(split(s:TopDir, '/')[0:-2], '/'))
+         call PanelUpdate()
+      endif
+   else
+      if s:TopDir != '/'
+         let s:TopDir = Slash("/".join(split(s:TopDir, '/')[0:-2], '/')) " TODO think about making a function in path.vim
+         call PanelUpdate()
+      endif
    endif
 endfunction " >>>
 
@@ -154,35 +161,68 @@ endfunction " >>>
 
 function! s:GetDirContent(lst,dir,lvl) " <<<
 
+   let l:dir = substitute(a:dir, '\\', '/', 'g')
+
    if a:lvl == 0
       call add(a:lst, ' ./')
-      call add(s:ListOfPaths, {'path':a:dir, 'rpath':'./', 'isdir': v:true, 'isopen': v:true, 'dir':a:dir, 'idx':len(s:ListOfPaths)})
-      call insert(s:OpenDirs, a:dir)
+      call add(s:ListOfPaths, {'path':l:dir, 'rpath':'./', 'isdir': v:true, 'isopen': v:true, 'dir':l:dir, 'idx':len(s:ListOfPaths)})
+      call insert(s:OpenDirs, l:dir)
    endif
 
-   for directory in globpath(a:dir, "*/", v:false, v:true)
-      if index(s:OpenDirs, directory) != -1
-         call add(a:lst, repeat('  ', a:lvl).' ▼ ' . split(directory, '/')[-1])
-         call add(s:ListOfPaths, {'path':directory, 'rpath':substitute(directory, Slash(getcwd()), '', ''), 'isdir': v:true, 'isopen': v:true, 'dir':directory, 'idx':len(s:ListOfPaths)})
-         call s:GetDirContent(a:lst, directory, a:lvl + 1)
-      else
-         call add(a:lst, repeat('  ', a:lvl).' ▶︎ ' . split(directory, '/')[-1])
-         call add(s:ListOfPaths, {'path':directory, 'rpath':substitute(directory, Slash(getcwd()), '', ''), 'isdir': v:true, 'isopen': v:false, 'dir':directory, 'idx':len(s:ListOfPaths)})
-      endif
-   endfor
+   for pathobject in globpath(l:dir, "*", v:false, v:true)
 
-   for filename in globpath(a:dir, "*", v:false, v:true)
-      if isdirectory(filename) == 0
-         call add(a:lst, repeat('  ', a:lvl).'   ' . substitute(filename, '.*/', '', ''))
-         call add(s:ListOfPaths, {'path':filename, 'rpath':substitute(filename, Slash(getcwd()), '', ''), 'isdir': v:false, 'dir':a:dir, 'idx':len(s:ListOfPaths)})
+      if isdirectory(pathobject)
+
+         let l:directory = substitute(pathobject, '\\', '/', 'g')
+
+         if index(s:OpenDirs, l:directory) != -1
+            call add(a:lst, repeat('  ', a:lvl).' ▼ ' . split(l:directory, '/')[-1])
+            call add(s:ListOfPaths, {'path':l:directory, 'rpath':substitute(l:directory, Slash(getcwd()), '', ''), 'isdir': v:true, 'isopen': v:true, 'dir':l:directory, 'idx':len(s:ListOfPaths)})
+            call s:GetDirContent(a:lst, l:directory, a:lvl + 1)
+         else
+            call add(a:lst, repeat('  ', a:lvl).' ▶︎ ' . split(l:directory, '/')[-1])
+            call add(s:ListOfPaths, {'path':l:directory, 'rpath':substitute(l:directory, Slash(getcwd()), '', ''), 'isdir': v:true, 'isopen': v:false, 'dir':l:directory, 'idx':len(s:ListOfPaths)})
+         endif
+
+      else
+
+         let l:filename = substitute(pathobject, '\\', '/', 'g')
+
+            call add(a:lst, repeat('  ', a:lvl).'   ' . substitute(l:filename, '.*/', '', ''))
+            call add(s:ListOfPaths, {'path':l:filename, 'rpath':substitute(l:filename, Slash(getcwd()), '', ''), 'isdir': v:false, 'dir':l:dir, 'idx':len(s:ListOfPaths)})
+
       endif
+
    endfor
 
    if s:ShowDotFiles
-      for dotfile in globpath(a:dir, ".*" , v:false, v:true)
-         if index(s:DotIgnore, substitute(dotfile, '.*/', '', '')) == -1
-            call add(a:lst, repeat('  ', a:lvl).'   ' . substitute(dotfile, '.*/', '', ''))
-            call add(s:ListOfPaths, {'path':filename, 'rpath':substitute(dotfile, Slash(getcwd()), '', ''), 'isdir': v:false, 'dir':a:dir, 'idx':len(s:ListOfPaths)})
+      for dotobject in globpath(l:dir, ".*" , v:false, v:true)
+         let l:dotobject = substitute(dotobject, '\\', '/', 'g')
+
+         if index(s:DotIgnore, substitute(l:dotobject, '.*/', '', '')) != -1
+            continue
+         endif
+
+         if isdirectory(dotobject)
+
+            let l:directory = substitute(dotobject, '\\', '/', 'g')
+
+            if index(s:OpenDirs, l:directory) != -1
+               call add(a:lst, repeat('  ', a:lvl).' ▼ ' . split(l:directory, '/')[-1])
+               call add(s:ListOfPaths, {'path':l:directory, 'rpath':substitute(l:directory, Slash(getcwd()), '', ''), 'isdir': v:true, 'isopen': v:true, 'dir':l:directory, 'idx':len(s:ListOfPaths)})
+               call s:GetDirContent(a:lst, l:directory, a:lvl + 1)
+            else
+               call add(a:lst, repeat('  ', a:lvl).' ▶︎ ' . split(l:directory, '/')[-1])
+               call add(s:ListOfPaths, {'path':l:directory, 'rpath':substitute(l:directory, Slash(getcwd()), '', ''), 'isdir': v:true, 'isopen': v:false, 'dir':l:directory, 'idx':len(s:ListOfPaths)})
+            endif
+
+         else
+
+            let l:filename = substitute(dotobject, '\\', '/', 'g')
+
+               call add(a:lst, repeat('  ', a:lvl).'   ' . substitute(l:filename, '.*/', '', ''))
+               call add(s:ListOfPaths, {'path':l:filename, 'rpath':substitute(l:filename, Slash(getcwd()), '', ''), 'isdir': v:false, 'dir':l:dir, 'idx':len(s:ListOfPaths)})
+
          endif
       endfor
    endif
