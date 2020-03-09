@@ -1632,7 +1632,7 @@ nnoremap +h :call CycleColorscheme()<CR>
 " nnoremap +k
 " nnoremap +l
 " nnoremap +m
-nnoremap +n :set relativenumber!<CR>
+" nnoremap +n
 " nnoremap +o
 " nnoremap +p
 " nnoremap +q
@@ -1654,7 +1654,7 @@ nnoremap +<TAB> :call CycleTabSpace()<CR>
 " Toggle Settings <<<
 
 " nnoremap -a
-nnoremap -b :set ballooneval!<CR>:set ballooneval?<CR>
+nnoremap -b :set ballooneval! ballooneval?<CR>
 nnoremap -c :ColorToggle<CR>
 " nnoremap -d
 " nnoremap -e
@@ -1664,25 +1664,26 @@ nnoremap -h :if exists("g:syntax_on") <BAR> syntax off <BAR> else <BAR> syntax o
 " nnoremap -i
 " nnoremap -j
 nnoremap -k :if &keywordprg == ":help" <BAR> set keywordprg=man <BAR> echo "keywordprg=man" <BAR> else <BAR> set keywordprg=:help <BAR> echo "keywordprg=:help" <BAR> endif <CR>
-nnoremap -l :setlocal list!<CR>:setlocal list?<CR>
+nnoremap -l :setlocal list! list?<CR>
 nnoremap -m :set cursorcolumn! <BAR> set cursorline!<CR>
-nnoremap -n :set number!<CR>
+nnoremap -n :set number! number?<CR>
+nnoremap -N :set relativenumber! relativenumber?<CR>
 " nnoremap -o
 " nnoremap -p
 " nnoremap -q
-nnoremap -r :set spell!<CR>:set spell?<CR>
+nnoremap -r :set spell! spell?<CR>
 nnoremap -s :sign unplace *<CR>
 " nnoremap -t
 " nnoremap -u
 " nnoremap -v
-nnoremap -w :set wrap!<CR>:set wrap?<CR>
+nnoremap -w :set wrap! wrap?<CR>
 " nnoremap -x
 " nnoremap -y
 " nnoremap -z
 " nnoremap -ä
 " nnoremap -ö
 " nnoremap -ü
-nnoremap -<TAB> :set expandtab!<CR>:set expandtab?<CR>
+nnoremap -<TAB> :set expandtab! expandtab?<CR>
 " >>>
 " Text Objects <<<
 onoremap <silent>ai :<C-U>call IndTxtObj(0, 0)<CR>
