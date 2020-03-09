@@ -1131,6 +1131,38 @@ endfunction
 " >>>
 
 " UNDER DEVELOPMENT <<<
+
+function! GetMisspelledWords()
+   let l:LineCnt  = 0
+   let l:BufLines = getbufline('%', 1, '$')
+   let l:BadWords = []
+   for line in l:BufLines
+      let l:Start=0
+      let l:LineCnt = l:LineCnt + 1
+      while v:true
+         let l:Match = matchstrpos(line,'\a\+',l:Start)
+         if l:Match[0] == ''
+            break
+         else
+            let l:Word  = l:Match[0]
+            let l:Start = l:Match[1]
+            let l:End   = l:Match[2]
+            let l:Check = spellbadword(l:Word)
+            if l:Check[0] != ''
+               call add(l:Check, l:LineCnt)
+               " call add(l:Check, l:Start)
+               " call add(l:Check, l:End-1)
+               call add(l:Check, l:Start+1)
+               call add(l:Check, l:End)
+               call add(l:BadWords, l:Check)
+            end
+            let l:Start = l:End
+         endif
+      endwhile
+   endfor
+   return l:BadWords
+endfunction
+
 " Test Color <<<
 "let g:Color = 0
 " function! TestColor()
@@ -1174,7 +1206,7 @@ endfunction
 " >>>
 " >>>
 
-"   commands <<<
+" commands <<<
 command! -range Left   call AlignBlock('l')
 command! -range Center call AlignBlock('c')
 command! -range Right  call AlignBlock('r')
@@ -1483,6 +1515,7 @@ cnoremap <C-SPACE> <C-R><C-W>
 nnoremap g<SPACE> *N
 nnoremap g<C-SPACE> g*N
 nnoremap ch :nohl<CR>
+"nnoremap g<CR> :set hls!<CR>
 
 nnoremap ym :call AddMatch('')<CR>
 xnoremap m "my:call AddMatch('m')<CR>
