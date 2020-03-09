@@ -52,6 +52,7 @@ function! BuffersSetup() " <<<
    setlocal cursorline
    setlocal statusline=\ BUFFERS
    map <silent> <nowait> <buffer> o :call BufferOpen()<CR>
+   map <silent> <nowait> <buffer> <CR> :call BufferOpen()<CR>
    map <silent> <nowait> <buffer> d :call BufferDelete()<CR>
    map <silent> <nowait> <buffer> + :call BufferInc()<CR>
    map <silent> <nowait> <buffer> - :call BufferDec()<CR>

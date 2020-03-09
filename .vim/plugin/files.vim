@@ -75,6 +75,7 @@ function! FilesSetup() " <<<
    setlocal statusline=\ FILES
    map <silent> <nowait> <buffer> a :call AllFiles()<CR>
    map <silent> <nowait> <buffer> o :call FileOpen()<CR>
+   map <silent> <nowait> <buffer> <CR> :call FileOpen()<CR>
    map <silent> <nowait> <buffer> e :call FileEdit()<CR>
    " map <silent> <nowait> <buffer> e :call ExpandDirs()<CR>
    map <silent> <nowait> <buffer> f :call FoldDirs()<CR>

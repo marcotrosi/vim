@@ -5,7 +5,6 @@
 "                  marcotrosi
 
 " functions <<<
-
 " cycle spellcheck languages <<<
 let s:myLang = 0
 let s:myLangList = [ "en", "de", "it" ]
@@ -162,10 +161,10 @@ endfunction
 " >>>
 
 " cycle font type and size <<< 
-let s:myFontType     = 0 
-let s:myFontSize     = 2 
-let s:myFontTypeList = ["Menlo", "Monaco", "Andale\\ Mono"] 
-let s:myFontSizeList = ["9", "10", "11", "12", "13", "14", "15", "16"]
+let s:myFontType     = 5 
+let s:myFontSize     = 3 
+let s:myFontTypeList = ["Courier\\ New", "Lucida\\ Console", "Consolas", "Hack", "Menlo", "DejaVu\\ Sans\\ Mono", "Fira\\ Code", "JetBrains\\ Mono", "Inconsolata"]
+let s:myFontSizeList = ["7", "8", "9", "10", "11", "12", "13", "14", "15", "16"]
 
 function! CycleFontType() 
    let s:myFontType = s:myFontType + 1 
@@ -973,6 +972,12 @@ function! IndTxtObj(inner, zeroindent)
 
 endfunction " >>>
 
+" find <<<
+function! Find(args)
+   lexpr! systemlist('fd ' . a:args)
+   lopen
+endfunction " >>>
+
 " grep <<<
 function! Grep(args)
    exec 'silent lgrep ' . a:args
@@ -986,95 +991,8 @@ function! GrepBuffers(args)
    lopen
 endfunction " >>>
 
-" find <<<
-function! Find(args)
-   lexpr! system('fd --type f ' . a:args)
-   lopen
-endfunction " >>>
-
-" UNDER DEVELOPMENT <<<
-function! GetVisualSelection() " <<<
-    silent! normal! gv"xy
-    return @x
-endfunction " >>>
-
-function! ExtractNumbersFromString(str) " <<<
-
-   let l:Numbers = []
-   let l:Match   = ""
-   let l:Start   = 0
-   let l:End     = 0
-   let l:Str     = substitute(a:str, '\n', ' ', 'g')
-
-   while v:true
-
-      " TODO float numbers
-      let l:Result = matchstrpos(l:Str, '\([+-]*0x\x\+\)\|\([+-]*0b[01]\+\)\|\([+-]*\d\+\)', l:Start)
-      let l:Match  = l:Result[0]
-      let l:Start  = l:Result[1]
-      let l:End    = l:Result[2]
-
-      if l:Match == ""
-         break
-      endif
-
-      " if strpart(l:Match, 0, 2) == '0b'
-      "    let l:value = substitute(l:Match, "0b", "y", "")
-      "    exe "silent Tobase 10 " . l:value
-      "    let l:Match = @@
-      " endif
-      " echo l:Match
-
-      " call add(l:Numbers, str2nr(l:Match))
-      call add(l:Numbers, l:Match)
-
-      let l:Start = l:End + 1
-   endwhile
-
-   " echo l:Numbers
-   return l:Numbers
-endfunction " >>>
-
-function! Sum(numbers) " <<<
-   " let l:Sum = 0
-   " for nr in a:numbers
-      " let l:Sum += nr
-   " endfor
-   " return l:Sum
-   return eval(join(a:numbers, '+'))
-endfunction " >>>
-
-function! JumpToSOBFW() " <<<
-   normal $
-   let g:BlockPattern_s = '^\s*\(if\|else\|while\|for\|func\)'
-   call search(g:BlockPattern_s, 'cW')
-endfunction " >>>
-
-function! JumpToSOBBW() " <<<
-   normal $
-   let g:BlockPattern_s = '^\s*\(if\|else\|while\|for\|func\)'
-   call search(g:BlockPattern_s, 'bcWz')
-endfunction " >>>
-
-" function! UserCompletion(findstart, base) " <<<
-"    if a:findstart
-"       let line = getline('.')
-"       let start = col('.') - 1
-"       if start > 0
-"          if line[start] == '('
-"             return start
-"          else
-"             return -3
-"          endif
-"       else
-"          return -3
-"       endif
-"    else
-"       return {'words':menus[s:NextMenu], 'refresh':'always'}
-"    endif
-" endfunction " >>>
-
-function! StripString(str, side) " <<<
+" strip string <<<
+function! StripString(str, side)
    if a:side == 'l'
       return matchlist(a:str, '^\s*\(.*\)$')[1]
    end
@@ -1082,13 +1000,14 @@ function! StripString(str, side) " <<<
       return matchlist(a:str, '^\(.\{-}\)\s*$')[1]
    end
    if a:side == 'b'
-      return trim(a:str)
       " return matchlist(a:str, '^\s*\(.\{-}\)\s*$')[1]
+      return trim(a:str)
    end
    return a:str
 endfunction " >>>
 
-function! AlignString(str, alignment, length) " <<<
+" align string <<<
+function! AlignString(str, alignment, length)
 
    " let l:OriginalWidth  = strdisplaywidth(a:str)
    let l:OriginalWidth  = a:length
@@ -1131,7 +1050,8 @@ function! AlignString(str, alignment, length) " <<<
 
 endfunction " >>>
 
-function! AlignBlock(alignment) " <<<
+" align block <<<
+function! AlignBlock(alignment)
 
    let l:TopLCurPos = getpos("'<")
    let l:BotRCurPos = getpos("'>")
@@ -1152,22 +1072,131 @@ function! AlignBlock(alignment) " <<<
    normal gv
 
 endfunction " >>>
+
+" get visual selection <<<
+function! GetVisualSelection()
+    silent! normal! gv"xy
+    return @x
+endfunction " >>>
+
+" extract numbers from string <<<
+function! ExtractNumbersFromString(str)
+
+   let l:Numbers = []
+   let l:Match   = ""
+   let l:Start   = 0
+   let l:End     = 0
+   let l:Str     = substitute(a:str, '\n', ' ', 'g')
+
+   while v:true
+
+      " let l:Result = matchstrpos(l:Str, '\([+-]*0x\x\+\)\|\([+-]*0b[01]\+\)\|\([+-]*\d\+\)', l:Start)
+      let l:Result = matchstrpos(l:Str, '\([+-]\?0x\x\+\)\|\([+-]\?0b[01]\+\)\|\([-+]\?\d*\.\?\d\+\([eE][-+]\?\d\+\)\?\)', l:Start)
+      
+      let l:Match  = l:Result[0]
+      let l:Start  = l:Result[1]
+      let l:End    = l:Result[2]
+
+      if l:Match == ""
+         break
+      endif
+
+      call add(l:Numbers, l:Match)
+
+      let l:Start = l:End + 1
+   endwhile
+
+   " echo l:Numbers
+   return l:Numbers
+endfunction " >>>
+
+" calculate sum <<<
+function! Sum(numbers)
+   return eval(join(a:numbers, '+'))
+endfunction " >>>
+
+" yank path <<<
+function! YankPath()
+   let l:Path      = expand('%:p')
+   let l:Directory = expand('%:p:h')
+   let l:File      = expand('%:p:t')
+   let l:Paths = ["quit", l:Path, l:Directory, l:File]
+   let l:i=0
+   let l:i = confirm("Yank Path","&path\n&directory\n&filename")
+   if l:i != 0
+      let @+=l:Paths[l:i]
+      let @"=l:Paths[l:i]
+   endif
+endfunction
+" >>>
+
+" UNDER DEVELOPMENT <<<
+" Test Color <<<
+"let g:Color = 0
+" function! TestColor()
+"    execute "hi Normal ctermbg=" . g:Color
+"    execute "hi NonText ctermbg=" . g:Color
+"    let g:Color=g:Color+1
+" endfunction
+" nnoremap +c :call TestColor()<CR>:echo g:Color<CR>
+" >>>
+" User Completion <<<
+" function! UserCompletion(findstart, base)
+"    if a:findstart
+"       let line = getline('.')
+"       let start = col('.') - 1
+"       if start > 0
+"          if line[start] == '('
+"             return start
+"          else
+"             return -3
+"          endif
+"       else
+"          return -3
+"       endif
+"    else
+"       return {'words':menus[s:NextMenu], 'refresh':'always'}
+"    endif
+" endfunction " >>>
+" Popup Test <<<
+" let g:BufList = ["foo", "bar", "super", "trooper", "vim magic"]
+"
+" function! ListBuffersCallback(id, result)
+"    echo a:id . " " . a:result . " " . g:BufList[a:result-1]
+" endfunction
+"
+" function! ListBuffers()
+"    let l:WinID = popup_menu(g:BufList, {'callback': 'ListBuffersCallback'})
+" endfunction
+"
+" nnoremap <space><space> :call ListBuffers()<cr>
+" >>>
 " >>>
 " >>>
 
-" commands <<<
+"   commands <<<
 command! -range Left   call AlignBlock('l')
 command! -range Center call AlignBlock('c')
 command! -range Right  call AlignBlock('r')
 command! -nargs=1 EditReg call EditReg(<f-args>)
 command! -range -nargs=* ReArrangeColumns <line1>,<line2>call ReArrangeColumns(<f-args>)
-command! -nargs=1 Grep call Grep('<args>')
-command! -nargs=? Find call Find('<args>')
+command! -nargs=* Grep call Grep('<args>')
+command! -nargs=* Find call Find('<args>')
 command! -range -nargs=0 Sum echo Sum(ExtractNumbersFromString(GetVisualSelection()))
 command! -range=% -nargs=? -complete=file New silent <line1>,<line2>yank x | enew | put! x | $d_ | if(<q-args> != '') | silent write <args> | endif
 command! E silent! !explorer .
 command! F silent! !open .
+command! SD let g:SD=getcwd()
+command! RD call chdir(g:SD)
+command! -nargs=1 MKCD call mkdir(<f-args>, "p") | call chdir(<f-args>)
+command! -nargs=? CD call system('start /wait cmd /c "fd -t d '.<q-args>.' | fzf --reverse > D:\temp\fzf.out || del D:\temp\fzf.out"') | if filereadable('D:\temp\fzf.out') | call chdir(readfile('D:\temp\fzf.out', '', 1)[0]) | endif
+command! -nargs=? FCD call system('start /wait cmd /c "fd -t f '.<q-args>.' | fzf --reverse > D:\temp\fzf.out || del D:\temp\fzf.out"') | if filereadable('D:\temp\fzf.out') | call chdir(GetPath(readfile('D:\temp\fzf.out', '', 1)[0])) | endif
+command! -nargs=? Edit call system('start /wait cmd /c "fd -t f '.<q-args>.' | fzf -m --reverse > D:\temp\fzf.out || del D:\temp\fzf.out"') | if filereadable('D:\temp\fzf.out') | for fname in readfile('D:\temp\fzf.out') | silent execute ':e ' . fname | endfor | endif
+
+" let Output=system("start fzf")
+" vertical terminal ++close fzf
 " :w !cat - >> /foo/samples
+" command! -nargs=0 -range=% NoX32 <line1>,<line2>s;^\s*/\*\~[FEAIOTK-]\*/\s*\n;;
 " >>>
 
 " settings <<<
@@ -1231,7 +1260,7 @@ set errorformat+=luac:\ %f:%l:\ %m
 set fillchars=vert:╏,fold:━
 set foldmarker=<<<,>>>
 set foldmethod=marker
-set grepprg=ag\ --nogroup\ --nocolor\ --vimgrep\ $*
+set grepprg=rg\ --vimgrep\ $*
 set grepformat=%f:%l:%c:%m
 set keywordprg=:help
 set laststatus=2
@@ -1359,31 +1388,58 @@ nnoremap <F12> :!ctags --langmap=c:.c.h -f .tags -R --tag-relative=yes --extra=+
 " Grep <<<
 " TODO: test with regex searches
 let g:RgHint="rg [options] pattern [path, ...]\n
-             \-w whole words \| -i case insensitive \| -v invert match \| -e regex\n
-             \-F literally \| --hidden search hidden files \| -t type -T non-type\n
+             \-w whole words \| -i case insensitive \| -s case sensitive \| -v invert match\n
+             \-F literally \| --hidden search hidden files \| -t type -T non-type \| -e regex\n
              \--max-depth NUM \| -A NUM after \| -B NUM before \| -C NUM context"
 
-nnoremap ög :echo g:RgHint<CR>:Grep<SPACE>
+let g:FdHint="fd [options] [pattern] [path, ...]\n
+             \-s case sensitive \| -i case insensitive \| -g glob based \| -t type\n
+             \-F literally \| -H search hidden files \| -E exclude glob\n
+             \-d MAXDEPTH \| -S SIZE \| -e extension \| -a absolute paths"
 
-nnoremap gö :call Grep('-F -w "' . expand('<cword>') . '" %')<CR>
+" sh   |map          |cmd           |desc
+" -----|-------------|--------------|-----------------------------------------------
+" f    |<space>f     |:Find -t f    |find files'                             done
+" d    |<space>d     |:Find -t d    |find directories'                       only possible with :lopen! which doesnt exist
+" e    |<space>e     |:Edit         |find files and edit'                    done
+" g    |<space>g     |:Grep in dir  |grep recursive in directory'            done
+" g    |             |:Grep in buf  |grep in current buffer'                 
+" g    |             |:Grep in bufs |grep in open buffers'                   
+" gl   | none        |              |grep files and list names'
+" ge   | none        |              |grep files and edit'
+" c    |<space>c     |CD            |find directory and change dir'          done
+" fcd  |             |FCD           |find file      and change dir'          done
+" fdf  |<space>v     |              |find files and diff files'
+" fE   |<space>E     |FE            |find file and open explorer'
+" dE   |<space>E     |DE            |find directory and open explorer'
+" mkcd | none        |MKCD          |create directory and change dir'        done
+" sd   | none        |SD            |store directory'                        done
+" rd   | none        |RD            |restore directory'                      done
+
+nnoremap <SPACE>f :echo g:FdHint<CR>:Find -t f<SPACE>
+"nnoremap <SPACE>d :echo g:FdHint<CR>:Find -t d<SPACE>
+nnoremap <SPACE>c :CD<CR>
+nnoremap <SPACE>C :echo g:FdHint<CR>:CD<SPACE>
+nnoremap <SPACE>e :Edit<CR>
+nnoremap <SPACE>E :echo g:FdHint<CR>:Edit<SPACE>
+nnoremap <SPACE>g :echo g:RgHint<CR>:Grep<SPACE>
+
+"nnoremap ög
+
+nnoremap gö :call Grep('-F -w -s "' . expand('<cword>') . '" %')<CR>
 nnoremap gÖ :call Grep('-F -i "' . expand('<cword>') . '" %')<CR>
-xnoremap gö "gy:call Grep('-F -w "' . getreg('g') . '" %')<CR>
+xnoremap gö "gy:call Grep('-F -w -s "' . getreg('g') . '" %')<CR>
 xnoremap gÖ "gy:call Grep('-F -i "' . getreg('g') . '" %')<CR>
 
-nnoremap gd :call Grep('-F -w "' . expand('<cword>') . '"')<CR>
+nnoremap gd :call Grep('-F -w -s "' . expand('<cword>') . '"')<CR>
 nnoremap gD :call Grep('-F -i "' . expand('<cword>') . '"')<CR>
-xnoremap gd "gy:call Grep('-F -w "' . getreg('g') . '"')<CR>
+xnoremap gd "gy:call Grep('-F -w -s "' . getreg('g') . '"')<CR>
 xnoremap gD "gy:call Grep('-F -i "' . getreg('g') . '"')<CR>
 
-nnoremap gb :call GrepBuffers('-F -w "' . expand('<cword>') . '" %')<CR>
+nnoremap gb :call GrepBuffers('-F -w -s "' . expand('<cword>') . '" %')<CR>
 nnoremap gB :call GrepBuffers('-F -i "' . expand('<cword>') . '" %')<CR>
-nnoremap gb "gy:call GrepBuffers('-F -w "' . getreg('g') . '" %')<CR>
+nnoremap gb "gy:call GrepBuffers('-F -w -s "' . getreg('g') . '" %')<CR>
 nnoremap gB "gy:call GrepBuffers('-F -i "' . getreg('g') . '" %')<CR>
-
-nnoremap ym :call AddMatch('')<CR>
-xnoremap m "my:call AddMatch('m')<CR>
-nnoremap cm :call ClearMatches()<CR>
-"nnoremap dm :call DeleteMatch()<CR> " TODO: store ID from matchadd
 
 " >>>
 " QuickFix And Location List <<<
@@ -1416,10 +1472,23 @@ xnoremap / y/\V"<CR>
 xnoremap ? y/\V\<"\><CR>
 xnoremap * y/\V\<"<CR>
 xnoremap # y/\V"\><CR>
-nnoremap <SPACE> /
-nnoremap <C-SPACE> /\c
+
+nnoremap <SPACE><SPACE> /
+nnoremap <SPACE><C-SPACE> /\c
+nnoremap <SPACE><S-SPACE> /\<\><left><left>
+nnoremap <SPACE><C-S-SPACE> /\c\<\><left><left>
+
+cnoremap <S-SPACE> <C-R><C-A>
+cnoremap <C-SPACE> <C-R><C-W>
 nnoremap g<SPACE> *N
+nnoremap g<C-SPACE> g*N
 nnoremap ch :nohl<CR>
+
+nnoremap ym :call AddMatch('')<CR>
+xnoremap m "my:call AddMatch('m')<CR>
+nnoremap cm :call ClearMatches()<CR>
+"nnoremap dm :call DeleteMatch()<CR> " TODO: store ID from matchadd
+
 " >>>
 " Buffer <<<
 nnoremap ön :enew<CR>
@@ -1449,6 +1518,10 @@ inoremap <C-k> <Up>
 inoremap <C-j> <Down>
 inoremap <C-h> <Left>
 inoremap <C-l> <Right>
+snoremap <C-k> <Up>
+snoremap <C-j> <Down>
+snoremap <C-h> <Left>
+snoremap <C-l> <Right>
 nnoremap H :call JumpToStartOfLine()<CR>
 nnoremap L :call JumpToEndOfLine()<CR>
 nnoremap 0 :call JumpToStartOfLine()<CR>
@@ -1499,6 +1572,7 @@ nnoremap mm g`Mzz
 " >>>
 " Registers <<<
 nnoremap cr :call ChangeRegType(v:register)<CR>
+nnoremap äs :call setreg('"', trim(getreg('"')))<CR>
 inoremap ü <C-r>
 cnoremap ü <C-r>
 nnoremap Ü :EditReg<SPACE>
@@ -1628,6 +1702,8 @@ nnoremap gp '[v']
 nnoremap gr :r <cfile><CR>
 nnoremap gs :%s;;
 xnoremap gs :s;\%V;
+nnoremap gS V:Sum<CR>
+xnoremap gS :Sum<CR>
 " or set scrolloff=5
 nnoremap z<CR> zt5<C-y>
 nnoremap z- zb5<C-e>
@@ -1636,14 +1712,18 @@ nnoremap Y y$
 xnoremap Y "+y
 nnoremap <C-p> "+p
 xnoremap <C-p> c+
+xnoremap <silent> P p:call setreg('"', getreg('0'), getregtype('0'))<CR>
+" xnoremap P pgvy
 nnoremap U <C-R>
 nnoremap cd :cd %:p:h<CR>
+nnoremap cu :cd ..<CR>
+nnoremap yp :call YankPath()<CR>
 nnoremap öf :call Panel('Files')<CR>
 nnoremap öm :call Make()<CR>
 nnoremap öc :call PanelClose()<CR>
 nnoremap zq :qa!<CR>
-nnoremap cq :%s///gn<CR>
-nnoremap cQ :%s///gn<CR>
+nnoremap cq :%s///gn<CR>
+nnoremap cQ :%s///gn<CR>
 nnoremap <S-SPACE> i<SPACE><ESC>l
 nnoremap <S-CR> o<ESC>0D
 nnoremap g<CR> r<CR>kddpk==
@@ -1651,11 +1731,12 @@ nnoremap <C-CR> i<CR><ESC>
 nnoremap g<C-CR> i<CR><ESC>kddpk==
 inoremap ö <ESC>
 cnoremap ö <ESC>
-cnoremap <S-SPACE> <C-R><C-W>
-cnoremap <C-SPACE> <C-R><C-A>
+inoremap Ö <C-v>
+vnoremap <expr> <C-u> mode() ==? "\<C-v>" ? ':Left<CR>'   : ':left<CR>'
+vnoremap <expr> <C-n> mode() ==? "\<C-v>" ? ':Center<CR>' : ':center<CR>'
+vnoremap <expr> <C-i> mode() ==? "\<C-v>" ? ':Right<CR>'  : ':right<CR>'
 " >>>
 " UNDER DEVELOPMENT <<<
-inoremap Ö <C-v>
 nnoremap öL :call LaTeXMenu("viw")<CR>
 xnoremap öL :call LaTeXMenu("gv")<CR>
 
@@ -1663,13 +1744,6 @@ augroup COMPLETE
    autocmd!
    autocmd CompleteDone <buffer> call LatexFontContinue()
 augroup END
-
-nnoremap gk :call JumpToSOBBW()<CR>
-nnoremap gj :call JumpToSOBFW()<CR>
-
-vnoremap <expr> <C-u> mode() ==? "\<C-v>" ? ':Left<CR>'   : ':left<CR>'
-vnoremap <expr> <C-n> mode() ==? "\<C-v>" ? ':Center<CR>' : ':center<CR>'
-vnoremap <expr> <C-i> mode() ==? "\<C-v>" ? ':Right<CR>'  : ':right<CR>'
 " >>>
 " >>>
 
@@ -1717,6 +1791,53 @@ vmenu &Utils.&Slash2BackSlash :s;/;\\;ge<CR>
 
 " OS|GUI|Term dependent settings <<<
 
+" Windows <<<
+if has("win32")
+
+   command P call chdir('D:\p')
+
+   " let  FD=$VIM . '\vimfiles\bin\fd.exe'
+   " let  RG=$VIM . '\vimfiles\bin\rg.exe'
+   " let FZF=$VIM . '\vimfiles\bin\fzf.exe'
+
+   set viminfofile=D:\\DSUsers\\uid34241\\tools\\vim\\.viminfo
+   set directory=$USERPROFILE\AppData\Local\Temp
+   set backspace=2
+   set lines=999 columns=999
+
+   if has("gui_running")
+
+      " let $CHERE_INVOKING=1
+      " set shell=D:\\Tools\\cygwin\\bin\\bash.exe\ -l
+      " set shellcmdflag=-c
+      " set shellxquote=\"
+      " set shellslash
+      " set noshelltemp
+
+      set guioptions-=T
+      set guioptions+=c
+      set guioptions+=!
+
+      set titlestring=%F
+
+      colorscheme molokai
+
+	else
+
+      " Cmder
+		set term=xterm
+		set t_Co=256
+		let &t_AB="\e[48;5;%dm"
+		let &t_AF="\e[38;5;%dm"
+		" colorscheme zenburn
+
+	endif
+
+else " all Unixoids
+
+
+endif " >>>
+
 " macOS <<<
 if has("macunix")
 
@@ -1747,37 +1868,10 @@ if has("unix")
    endif
 endif " >>>
 
-" Windows <<<
-if has("win32")
-
-   set viminfofile=D:\\DSUsers\\uid34241\\tools\\vim\\.viminfo
-   set directory=$USERPROFILE\AppData\Local\Temp
-   set backspace=2
-   set lines=999 columns=999
-
-   set grepprg=D:\Tools\cygwin\usr\local\bin\rg.exe\ --vimgrep\ $*
-   set grepformat=%f:%l:%c:%m
-
-   if has("gui_running")
-
-      set guioptions-=T
-      set guioptions+=c
-      set guioptions+=!
-      set titlestring=%F
-      colorscheme molokai
-
-   else
-
-   endif
-
-endif " >>>
-
 " Cygwin <<<
 if has("win32unix")
 
    set directory=/tmp
-   set grepprg=ag\ --nogroup\ --nocolor\ --vimgrep\ $* 
-   set grepformat=%f:%l:%c:%m
 
    colorscheme jellybeans
 

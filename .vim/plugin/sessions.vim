@@ -1,7 +1,7 @@
 let s:ListOfDisplayedSessions = [] " linenumber as index; modified session names as displayed
 
-if has("win32") || has("dos32") || has("dos16") || has("os2")
-	let s:SessionsPath = ($HOME != '') ? $HOME . '/vimfiles' : ($APPDATA != '') ? $APPDATA . '/Vim' : $VIM
+if has("win32")
+	let s:SessionsPath = $VIM . '/vimfiles/sessions'
 	let s:SessionsPath = substitute(s:SessionsPath, '\\', '/', 'g') . '/sessions'
 else
 	let s:SessionsPath = $HOME . '/.vim/sessions'
@@ -33,6 +33,7 @@ function! SessionsSetup() " <<<
    setlocal cursorline
    setlocal statusline=\ SESSIONS
    map <silent> <nowait> <buffer> o :call SessionOpen()<CR>
+   map <silent> <nowait> <buffer> <CR> :call SessionOpen()<CR>
    map <silent> <nowait> <buffer> a :call SessionAppend()<CR>
    map <silent> <nowait> <buffer> d :call SessionDelete()<CR>
    map <silent> <nowait> <buffer> r :call SessionRename()<CR>

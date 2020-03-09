@@ -59,6 +59,7 @@ function! TagsSetup() " <<<
    setlocal cursorline
    setlocal statusline=\ TAGS
    map <silent> <nowait> <buffer> o :call TagOpen()<CR>
+   map <silent> <nowait> <buffer> <CR> :call TagOpen()<CR>
    map <silent> <nowait> <buffer> p :call TagPreview()<CR>
    map <silent> <nowait> <buffer> c :call TagClose()<CR>
    map <silent> <nowait> <buffer> e :call TagExpand()<CR>
