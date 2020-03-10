@@ -1670,7 +1670,7 @@ nnoremap +h :call CycleColorscheme()<CR>
 nnoremap +k :if &keywordprg == ":help" <BAR> set keywordprg=man <BAR> echo "keywordprg=man" <BAR> else <BAR> set keywordprg=:help <BAR> echo "keywordprg=:help" <BAR> endif <CR>
 " nnoremap +l
 " nnoremap +m
-" nnoremap +n
+nnoremap +n :call CycleNotation()<CR>
 " nnoremap +o
 " nnoremap +p
 " nnoremap +q
@@ -1679,7 +1679,7 @@ nnoremap +s :call CycleFontSize()<CR>
 " nnoremap +s
 " nnoremap +t
 " nnoremap +u
-nnoremap +v :call CycleNotation()<CR>
+" nnoremap +v
 nnoremap +w :call CycleTextWidth()<CR>
 " nnoremap +x
 " nnoremap +y
@@ -1690,7 +1690,6 @@ nnoremap +w :call CycleTextWidth()<CR>
 nnoremap +<TAB> :call CycleTabSpace()<CR>
 " >>>
 " Toggle Settings <<<
-
 " nnoremap -a
 nnoremap -b :set ballooneval! ballooneval?<CR>
 nnoremap -c :ColorToggle<CR>
@@ -1714,7 +1713,7 @@ nnoremap -r :set spell! spell?<CR>
 nnoremap -s :set hls!<CR>
 " nnoremap -t
 nnoremap -u :sign unplace *<CR>
-" nnoremap -v
+nnoremap -v :set hidden! hidden?<CR>
 nnoremap -w :set wrap! wrap?<CR>
 " nnoremap -x
 " nnoremap -y
