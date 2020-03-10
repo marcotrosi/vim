@@ -1131,7 +1131,7 @@ endfunction
 " >>>
 
 " UNDER DEVELOPMENT <<<
-
+" get misspelled words <<<
 function! GetMisspelledWords()
    let l:LineCnt  = 0
    let l:BufLines = getbufline('%', 1, '$')
@@ -1162,7 +1162,7 @@ function! GetMisspelledWords()
    endfor
    return l:BadWords
 endfunction
-
+" >>>
 " Test Color <<<
 "let g:Color = 0
 " function! TestColor()
@@ -1314,6 +1314,12 @@ sign define E text=× texthl=red
 sign define W text=! texthl=org
 sign define I text=i texthl=blu
 sign define O text=✔ texthl=grn
+" https://en.wikipedia.org/wiki/Box-drawing_character
+" https://en.wikipedia.org/wiki/Box_Drawing_(Unicode_block)
+" https://en.wikipedia.org/wiki/Block_Elements
+" https://en.wikipedia.org/wiki/Geometric_Shapes
+sign define A text=▶︎ texthl=red
+sign define B text=■ texthl=red
 
 "function! Diff()
    " let l:opt = ''
@@ -1515,7 +1521,6 @@ cnoremap <C-SPACE> <C-R><C-W>
 nnoremap g<SPACE> *N
 nnoremap g<C-SPACE> g*N
 nnoremap ch :nohl<CR>
-"nnoremap g<CR> :set hls!<CR>
 
 nnoremap ym :call AddMatch('')<CR>
 xnoremap m "my:call AddMatch('m')<CR>
@@ -1662,7 +1667,7 @@ nnoremap +f :call CycleFontType()<CR>
 nnoremap +h :call CycleColorscheme()<CR>
 " nnoremap +i
 " nnoremap +j
-" nnoremap +k
+nnoremap +k :if &keywordprg == ":help" <BAR> set keywordprg=man <BAR> echo "keywordprg=man" <BAR> else <BAR> set keywordprg=:help <BAR> echo "keywordprg=:help" <BAR> endif <CR>
 " nnoremap +l
 " nnoremap +m
 " nnoremap +n
@@ -1705,9 +1710,10 @@ nnoremap -N :set relativenumber! relativenumber?<CR>
 " nnoremap -p
 " nnoremap -q
 nnoremap -r :set spell! spell?<CR>
-nnoremap -s :sign unplace *<CR>
+" nnoremap -s :sign unplace *<CR>
+nnoremap -s :set hls!<CR>
 " nnoremap -t
-" nnoremap -u
+nnoremap -u :sign unplace *<CR>
 " nnoremap -v
 nnoremap -w :set wrap! wrap?<CR>
 " nnoremap -x
@@ -1738,8 +1744,7 @@ nnoremap gs :%s;;
 xnoremap gs :s;\%V;
 nnoremap gS V:Sum<CR>
 xnoremap gS :Sum<CR>
-" or set scrolloff=5
-nnoremap z<CR> zt5<C-y>
+nnoremap z+ zt5<C-y>
 nnoremap z- zb5<C-e>
 nnoremap Q @q
 nnoremap Y y$
@@ -1771,13 +1776,13 @@ vnoremap <expr> <C-n> mode() ==? "\<C-v>" ? ':Center<CR>' : ':center<CR>'
 vnoremap <expr> <C-i> mode() ==? "\<C-v>" ? ':Right<CR>'  : ':right<CR>'
 " >>>
 " UNDER DEVELOPMENT <<<
-nnoremap öL :call LaTeXMenu("viw")<CR>
-xnoremap öL :call LaTeXMenu("gv")<CR>
-
-augroup COMPLETE
-   autocmd!
-   autocmd CompleteDone <buffer> call LatexFontContinue()
-augroup END
+" nnoremap öL :call LaTeXMenu("viw")<CR>
+" xnoremap öL :call LaTeXMenu("gv")<CR>
+"
+" augroup COMPLETE
+"    autocmd!
+"    autocmd CompleteDone <buffer> call LatexFontContinue()
+" augroup END
 " >>>
 " >>>
 
