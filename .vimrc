@@ -1582,17 +1582,6 @@ nnoremap <S-Down> ddp
 xnoremap <S-Up>   xkP'[V']
 xnoremap <S-Down> xp'[V']
 " >>>
-" Visual Block <<<
-onoremap ib :call VisualBlock(0,',')<CR>
-onoremap ab :call VisualBlock(1,',')<CR>
-onoremap iB :call VisualBlock(0,'')<CR>
-onoremap aB :call VisualBlock(1,'')<CR>
-
-nnoremap vib :call VisualBlock(0,',')<CR>
-nnoremap vab :call VisualBlock(1,',')<CR>
-nnoremap viB :call VisualBlock(0,'')<CR>
-nnoremap vaB :call VisualBlock(1,'')<CR>
-" >>>
 " Indent <<<
 xnoremap <C-l> >gv
 xnoremap <C-h> <gv
@@ -1724,15 +1713,34 @@ nnoremap -w :set wrap! wrap?<CR>
 nnoremap -<TAB> :set expandtab! expandtab?<CR>
 " >>>
 " Text Objects <<<
-onoremap <silent>ai :<C-U>call IndTxtObj(0, 0)<CR>
-onoremap <silent>ii :<C-U>call IndTxtObj(1, 0)<CR>
-vnoremap <silent>ai :<C-U>call IndTxtObj(0, 0)<CR><Esc>gv
-vnoremap <silent>ii :<C-U>call IndTxtObj(1, 0)<CR><Esc>gv
+" Visual Block <<<
+vnoremap ab :<C-U>call VisualBlock(1,',')<CR>
+vnoremap ib :<C-U>call VisualBlock(0,',')<CR>
+onoremap ab :normal ab<CR>
+onoremap ib :normal ib<CR>
 
-onoremap <silent>aI :<C-U>call IndTxtObj(0, 1)<CR>
-onoremap <silent>iI :<C-U>call IndTxtObj(1, 1)<CR>
-vnoremap <silent>aI :<C-U>call IndTxtObj(0, 1)<CR><Esc>gv
-vnoremap <silent>iI :<C-U>call IndTxtObj(1, 1)<CR><Esc>gv
+vnoremap aB :<C-U>call VisualBlock(1,'')<CR>
+vnoremap iB :<C-U>call VisualBlock(0,'')<CR>
+onoremap aB :normal aB<CR>
+onoremap iB :normal iB<CR>
+" >>>
+" Indent Level <<<
+vnoremap <silent>ai :<C-U>call IndTxtObj(0, 0)<CR>
+vnoremap <silent>ii :<C-U>call IndTxtObj(1, 0)<CR>
+onoremap ai :normal Vai<CR>
+onoremap ii :normal Vii<CR>
+
+vnoremap <silent>aI :<C-U>call IndTxtObj(0, 1)<CR>
+vnoremap <silent>iI :<C-U>call IndTxtObj(1, 1)<CR>
+onoremap aI :normal VaI<CR>
+onoremap iI :normal ViI<CR>
+" >>>
+" Folding <<<
+vnoremap af :<C-U>silent! normal! [zV]z<CR>
+vnoremap if :<C-U>silent! normal! [zjV]zk<CR>
+onoremap af :normal Vaf<CR>
+onoremap if :normal Vif<CR>
+" >>>
 " >>>
 " Misc <<<
 nnoremap gG ggVG
