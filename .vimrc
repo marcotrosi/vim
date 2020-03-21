@@ -318,6 +318,12 @@ function! RevSelLines()
 endfunction
 " >>>
 
+" reverse string <<<
+function! ReverseString(str)
+   return join(reverse(split(a:str, '.\zs')), '')
+endfunction
+" >>>
+
 " toggle foldcolumn <<<
 function! ToggleFoldColumn()
    if &foldcolumn
@@ -1421,7 +1427,7 @@ nnoremap öÄ :call JumpToTest(expand('<cword>'))<CR>
 nnoremap öH :helptags ~/.vim/doc<CR>
 nnoremap <F10> :!ltags $(find . -name '*.lua') > .tags<CR>
 nnoremap <F11> :!cscope -b -c -R<CR>
-nnoremap <F12> :!ctags --langmap=c:.c.h -f .tags -R --tag-relative=yes --extra=+fq --fields=+znimsStK --c-kinds=+lpx --sort=yes<CR>
+nnoremap <F12> :!ctags --langmap=c:.c.h -f .tags -R --tag-relative=yes --extras=+fq --fields=+znimsStK --c-kinds=+lpx --sort=yes<CR>
 " >>>
 " Grep <<<
 " TODO: test with regex searches
@@ -1607,8 +1613,6 @@ nnoremap Ü :EditReg<SPACE>
 " Completion <<<
 cnoremap <C-k> <UP>
 cnoremap <C-j> <DOWN>
-"inoremap <expr> <TAB>   Complete(0)
-"inoremap <expr> <S-TAB> Complete(1)
 
 inoremap <expr> <ESC>   pumvisible() ? "\<C-e>"       : "\<ESC>"
 inoremap <expr> <SPACE> pumvisible() ? "\<C-y>"       : "\<SPACE>"
@@ -1632,8 +1636,10 @@ inoremap är <C-x><C-s>
 inoremap ät <C-x><C-]>
 " user defined
 inoremap äu <C-x><C-u>
+inoremap <C-SPACE> <C-x><C-u>
 " omni completion
 inoremap äo <C-x><C-o>
+inoremap <S-SPACE> <C-x><C-o>
 
 " add date/time
 " äj 2019-08-21
@@ -1703,6 +1709,7 @@ nnoremap -s :set hls!<CR>
 " nnoremap -t
 nnoremap -u :sign unplace *<CR>
 nnoremap -v :set hidden! hidden?<CR>
+nnoremap -V :set modifiable! modifiable?<CR>
 nnoremap -w :set wrap! wrap?<CR>
 " nnoremap -x
 " nnoremap -y
@@ -1778,6 +1785,7 @@ nnoremap g<C-CR> i<CR><ESC>kddpk==
 inoremap ö <ESC>
 cnoremap ö <ESC>
 inoremap Ö <C-v>
+cnoremap Ö <C-v>
 vnoremap <expr> <C-u> mode() ==? "\<C-v>" ? ':Left<CR>'   : ':left<CR>'
 vnoremap <expr> <C-n> mode() ==? "\<C-v>" ? ':Center<CR>' : ':center<CR>'
 vnoremap <expr> <C-i> mode() ==? "\<C-v>" ? ':Right<CR>'  : ':right<CR>'
