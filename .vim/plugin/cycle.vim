@@ -18,10 +18,12 @@ let s:options['global'] = [
   \ ['true', 'false'],
   \ ['True', 'False'],
   \ ['TRUE', 'FALSE'],
+  \ ['yes', 'no'],
   \ ['YES', 'NO'],
   \ ['on', 'off'],
   \ ['first', 'last'],
   \ ['else', 'else if'],
+  \ ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
 \]
 
 " css/sass/javascript/html

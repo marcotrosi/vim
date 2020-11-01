@@ -1,17 +1,37 @@
-" Vim color file
 " Author: Viet Phan
-" Colorscheme Name: monokai pro
-" Inspired by https://www.monokai.pro/
+" Mods: Marco Trosi
 
 set background=dark
-highlight clear
+hi clear
 
 if exists("syntax_on")
-  syntax reset
+   syntax reset
 endif
 
 let g:colors_name = "monokai"
 
+" Color Palette <<<
+let s:red="#F92672"
+let s:grn="#A6E22E"
+let s:org="#FD971F"
+let s:blu="#66D9EF"
+let s:ppl="#AE81FF"
+let s:ylw="#FFE345"
+let s:lit="#F8F8F0"
+let s:drk="#2D2A2E"
+" >>>
+
+" StatusLine <<<
+exe "hi SLRed guifg=" . s:red . " guibg=" . s:drk . " gui=bold"
+exe "hi SLGrn guifg=" . s:grn . " guibg=" . s:drk . " gui=bold"
+exe "hi SLOrg guifg=" . s:org . " guibg=" . s:drk . " gui=bold"
+exe "hi SLBlu guifg=" . s:blu . " guibg=" . s:drk . " gui=bold"
+exe "hi SLPpl guifg=" . s:ppl . " guibg=" . s:drk . " gui=bold"
+exe "hi SLYlw guifg=" . s:ylw . " guibg=" . s:drk . " gui=bold"
+exe "hi SLNrm guifg=" . s:lit . " guibg=" . s:drk . " gui=none"
+" >>>
+
+" Defaults <<<
 " Default group
 hi Cursor ctermfg=16 ctermbg=231 cterm=NONE guifg=#2d2a2e guibg=#fcfcfa gui=NONE
 hi SignColumn ctermfg=NONE ctermbg=237 cterm=NONE guibg=#3a3a3a guifg=NONE guisp=NONE gui=NONE
@@ -161,3 +181,4 @@ hi jsObjectSeparator ctermfg=246 ctermbg=NONE cterm=NONE guifg=#939293 guibg=NON
 hi jsLabel ctermfg=204 ctermbg=NONE cterm=NONE guifg=#ff6188 guibg=NONE gui=NONE
 hi jsArrowFunction ctermfg=204 ctermbg=NONE cterm=NONE guifg=#ff6188 guibg=NONE gui=NONE
 hi jsUndefined ctermfg=147 ctermbg=NONE cterm=NONE guifg=#ab9df2 guibg=NONE gui=NONE
+" >>>

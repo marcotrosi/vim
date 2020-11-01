@@ -1,73 +1,95 @@
-" colorizer.vim	Colorize all text in the form #rrggbb or #rgb; entrance
-" Maintainer:	lilydjwg <lilydjwg@gmail.com>
-" Version:	1.4.2
-" Licence:	Vim license. See ':help license'
-" Derived From: css_color.vim
-" 		http://www.vim.org/scripts/script.php?script_id=2150
-" Thanks To:	Niklas Hofer (Author of css_color.vim), Ingo Karkat, rykka,
-"		KrzysztofUrban, blueyed, shanesmith, UncleBill
-" Usage:
+" Plugin:       Highlight Colornames and Values
+" Maintainer:   Christian Brabandt <cb@256bit.org>
+" URL:          http://www.github.com/chrisbra/color_highlight
+" Last Change: Thu, 15 Jan 2015 21:49:17 +0100
+" Licence:      Vim License (see :h License)
+" Version:      0.11
+" GetLatestVimScripts: 3963 11 :AutoInstall: Colorizer.vim
 "
-" This plugin defines three commands:
-"
-" 	ColorHighlight	- start/update highlighting
-" 	ColorClear      - clear all highlights
-" 	ColorToggle     - toggle highlights
-"
-" By default, <leader>tc is mapped to ColorToggle. If you want to use another
-" key map, do like this:
-" 	nmap ,tc <Plug>Colorizer
-"
-" If you want completely not to map it, set the following in your vimrc:
-"	let g:colorizer_nomap = 1
-"
-" To use solid color highlight, set this in your vimrc (later change won't
-" probably take effect unless you use ':ColorHighlight!' to force update):
-"	let g:colorizer_fgcontrast = -1
-" set it to 0 or 1 to use a softened foregroud color.
-"
-" If you don't want to enable colorizer at startup, set the following:
-"	let g:colorizer_startup = 0
-"
-" You can disable it on long buffers, for example if more than 1000 lines:
-"	let g:colorizer_maxlines = 1000
-" -1 means unlimited number of lines
-"
-" There are color strings in the format #RRGGBBAA and #AARRGGBB. The former is
-" more common so it's the default. If you want the latter, set the following:
-"	let g:colorizer_hex_alpha_first = 1
-"
-" Note: if you modify a color string in normal mode, if the cursor is still on
-" that line, it'll take 'updatetime' seconds to update. You can use
-" :ColorHighlight (or your key mapping) again to force update.
-"
-" Performace Notice: In terminal, it may take several seconds to highlight 240
-" different colors. GUI version is much quicker.
+" This plugin was inspired by the css_color.vim plugin from Nikolaus Hofer.
+" Changes made: - make terminal colors work more reliably and with all
+"                 color terminals
+"               - performance improvements, coloring is almost instantenously
+"               - detect rgb colors like this: rgb(R,G,B)
+"               - detect hsl coloring: hsl(H,V,L)
+"               - fix small bugs
 
-" Reload guard and 'compatible' handling {{{1
-if exists("loaded_colorizer") || v:version < 700 || !(has("gui_running") || &t_Co == 256)
+" Init some variables "{{{1
+" Plugin folklore "{{{2
+if v:version < 700 || exists("g:loaded_colorizer") || &cp
   finish
 endif
-let loaded_colorizer = 1
+let g:loaded_colorizer = 1
 
-let s:save_cpo = &cpo
+let s:cpo_save = &cpo
 set cpo&vim
 
-"Define commands {{{1
-if !exists('g:colorizer_maxlines')
-  let g:colorizer_maxlines = -1
-endif
-command! -bar -bang ColorHighlight call colorizer#ColorHighlight(1, "<bang>")
-command! -bar ColorClear call colorizer#ColorClear()
-command! -bar ColorToggle call colorizer#ColorToggle()
-nnoremap <silent> <Plug>Colorizer :ColorToggle<CR>
-if !hasmapto("<Plug>Colorizer") && (!exists("g:colorizer_nomap") || g:colorizer_nomap == 0)
-  nmap <unique> <Leader>tc <Plug>Colorizer
-endif
-if !exists('g:colorizer_startup') || g:colorizer_startup
-  call colorizer#ColorHighlight(0)
+" helper functions "{{{1
+fu! ColorHiArgs(A,L,P)
+    return "syntax\nmatch\nnosyntax\nnomatch"
+endfu
+
+" define commands "{{{1
+command! -bang -range=%  -nargs=? -complete=custom,ColorHiArgs ColorHighlight
+        \ :call Colorizer#DoColor(<q-bang>, <q-line1>, <q-line2>, <q-args>)
+command! -bang -nargs=1  RGB2Term  
+        \ :call Colorizer#RGB2Term(<q-args>, <q-bang>)
+command! -nargs=1  Term2RGB     :call Colorizer#Term2RGB(<q-args>)
+
+command! -bang    ColorClear    :call Colorizer#ColorOff()
+command! -bang    ColorToggle   :call Colorizer#ColorToggle()
+command! -nargs=1 HSL2RGB       :call Colorizer#HSL2Term(<q-args>)
+command!          ColorContrast :call Colorizer#SwitchContrast()
+command!          ColorSwapFgBg :call Colorizer#SwitchFGBG()
+
+" define mappings "{{{1
+nnoremap <Plug>Colorizer        :<C-U>ColorToggle<CR>
+xnoremap <Plug>Colorizer        :ColorHighlight<CR>
+nnoremap <Plug>ColorContrast    :<C-U>ColorContrast<CR>
+xnoremap <Plug>ColorContrast    :<C-U>ColorContrast<CR>
+nnoremap <Plug>ColorFgBg        :<C-U>ColorSwapFgBg<CR>
+xnoremap <Plug>ColorFgBg        :<C-U>ColorSwapFgBg<CR>
+
+if get(g:, 'colorizer_auto_map', 0)
+    " only map, if the mapped keys are not yet taken by a different plugin
+    " and the user hasn't mapped the function to different keys
+    if empty(maparg('<Leader>cC', 'n')) && empty(hasmapto('<Plug>Colorizer', 'n'))
+        nmap <silent> <Leader>cC <Plug>Colorizer
+    endif
+    if empty(maparg('<Leader>cC', 'x')) && empty(hasmapto('<Plug>Colorizer', 'x'))
+        xmap <silent> <Leader>cC <Plug>Colorizer
+    endif
+    if empty(maparg('<Leader>cT', 'n')) && empty(hasmapto('<Plug>ColorContrast', 'n'))
+        nmap <silent> <Leader>cT <Plug>ColorContrast
+    endif
+    if empty(maparg('<Leader>cT', 'x')) && empty(hasmapto('<Plug>ColorContrast', 'n'))
+        xmap <silent> <Leader>cT <Plug>ColorContrast
+    endif
+    if empty(maparg('<Leader>cF', 'n')) && empty(hasmapto('<Plug>ColorFgBg', 'n'))
+        nmap <silent> <Leader>cF <Plug>ColorFgBg
+    endif
+    if empty(maparg('<Leader>cF', 'x')) && empty(hasmapto('<Plug>ColorFgBg', 'x'))
+        xmap <silent> <Leader>cF <Plug>ColorFgBg
+    endif
 endif
 
-" Cleanup and modelines {{{1
-let &cpo = s:save_cpo
-" vim:ft=vim:fdm=marker:fmr={{{,}}}:ts=8:sw=2:sts=2:
+" Enable Autocommands "{{{1
+if exists("g:colorizer_auto_color")
+    " Prevent autoloading
+    exe "call Colorizer#AutoCmds(g:colorizer_auto_color)"
+endif
+
+if exists("g:colorizer_auto_filetype")
+    " Setup some autocommands for specific filetypes.
+    aug FT_ColorizerPlugin
+        au!
+        exe "au Filetype" g:colorizer_auto_filetype 
+                    \ "call Colorizer#LocalFTAutoCmds(1)\|
+                    \ :ColorHighlight"
+    aug END
+endif
+
+" Plugin folklore and Vim Modeline " {{{1
+let &cpo = s:cpo_save
+unlet s:cpo_save
+" vim: set foldmethod=marker et fdl=0:

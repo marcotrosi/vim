@@ -4,13 +4,15 @@
 "   \_/ |___|_|  |_|_|_\\___|
 "                  marcotrosi
 
+
 " functions <<<
 " cycle spellcheck languages <<<
 let s:myLang = 0
 let s:myLangList = [ "en", "de", "it" ]
-function! CycleSpellLang()
-   let s:myLang = s:myLang + 1
+function! CycleSpellLang(direction)
+   let s:myLang = s:myLang + a:direction
    if s:myLang >= len(s:myLangList) | let s:myLang = 0 | endif
+   if s:myLang < 0 | let s:myLang = len(s:myLangList)-1 | endif
    exe "set spelllang=".s:myLangList[s:myLang]
    echo "language:" s:myLangList[s:myLang]
 endf
@@ -34,14 +36,35 @@ for cs in s:myColorschemeFiles
 endfor
 unlet s:myColorschemeFiles
 
-function! CycleColorscheme()
-   let s:myColorscheme = s:myColorscheme + 1
-   if s:myColorscheme >= len(s:myColorschemeList) | let s:myColorscheme = 0 | endif
-   exe "colorscheme ".s:myColorschemeList[s:myColorscheme]
-   redraw
-   echo "colorscheme:" s:myColorschemeList[s:myColorscheme]
+function! SetColorscheme(id, result)
+   if a:result == -1
+      return
+   endif
+
+   let s:myColorscheme = a:result-1
+   exe "colorscheme ".s:myColorschemeList[a:result-1]
+   colorscheme
+endfunction
+
+function! CycleColorscheme(direction)
+   if a:direction == 0
+      let l:WinID = popup_menu(s:myColorschemeList, {'callback': 'SetColorscheme'})
+   else
+      let s:myColorscheme = s:myColorscheme + a:direction
+      if s:myColorscheme >= len(s:myColorschemeList) | let s:myColorscheme = 0 | endif
+      if s:myColorscheme < 0 | let s:myColorscheme = len(s:myColorschemeList)-1 | endif
+      exe "colorscheme ".s:myColorschemeList[s:myColorscheme]
+      redraw
+      colorscheme
+   endif
 endf
 " >>>
+
+" get highlight group <<<
+function! GetHighlightGroup()
+   let l:s = synID(line('.'), col('.'), 1)                                       
+   echo synIDattr(l:s, 'name') . ' -> ' . synIDattr(synIDtrans(l:s), 'name')
+  endfunction " >>>
 
 " cycle notation functions <<<
 " general workflow <<<
@@ -161,22 +184,24 @@ endfunction
 " >>>
 
 " cycle font type and size <<< 
-let s:myFontType     = 5 
-let s:myFontSize     = 3 
+let s:myFontType     = 6 
+let s:myFontSize     = 4 
 let s:myFontTypeList = ["Courier\\ New", "Lucida\\ Console", "Consolas", "Hack", "Menlo", "DejaVu\\ Sans\\ Mono", "Fira\\ Code", "JetBrains\\ Mono", "Inconsolata"]
 let s:myFontSizeList = ["7", "8", "9", "10", "11", "12", "13", "14", "15", "16"]
 
-function! CycleFontType() 
-   let s:myFontType = s:myFontType + 1 
+function! CycleFontType(direction) 
+   let s:myFontType = s:myFontType + a:direction
    if s:myFontType >= len(s:myFontTypeList) | let s:myFontType = 0 | endif 
+   if s:myFontType < 0 | let s:myFontType = len(s:myFontTypeList)-1 | endif 
    exe "set guifont=".s:myFontTypeList[s:myFontType].":h".s:myFontSizeList[s:myFontSize] 
    redraw 
    set guifont? 
 endfunction
 
-function! CycleFontSize() 
-   let s:myFontSize = s:myFontSize + 1 
-   if s:myFontSize >= len(s:myFontSizeList) | let s:myFontSize = 0 | endif 
+function! CycleFontSize(direction) 
+   let s:myFontSize = s:myFontSize + a:direction
+   if s:myFontSize >= len(s:myFontSizeList) | let s:myFontSize = 0   | endif 
+   if s:myFontSize <  0 | let s:myFontSize = len(s:myFontSizeList)-1 | endif 
    exe "set guifont=".s:myFontTypeList[s:myFontType].":h".s:myFontSizeList[s:myFontSize] 
    redraw 
    set guifont? 
@@ -216,10 +241,12 @@ endfunction
 " >>>
 
 " cycle tabspace <<<
-function! CycleTabSpace()
-   let g:TabSpace = g:TabSpace + 1
+function! CycleTabSpace(direction)
+   let g:TabSpace = g:TabSpace + a:direction
    if g:TabSpace > 4
       let g:TabSpace = 2
+   elseif g:TabSpace < 2
+      let g:TabSpace = 4
    endif
    execute 'set tabstop='.g:TabSpace
    execute 'set softtabstop='.g:TabSpace
@@ -227,7 +254,7 @@ function! CycleTabSpace()
 endfunction " >>>
 
 " cycle textwidth <<<
-function! CycleTextWidth()
+function! CycleTextWidth(direction)
    if g:TextWidth == 0
       let g:TextWidth = 80
    elseif g:TextWidth == 80
@@ -407,7 +434,8 @@ function! JumpToStartOfLine()
    if l:CurCol == 1
       normal _
    else
-      call cursor(".", 1)
+      normal 0
+      " call cursor(".", 1)
    endif
 
 endfunction
@@ -422,7 +450,8 @@ function! JumpToEndOfLine()
    if l:CurCol == l:EndCol
       normal g_
    else
-      exec 'call cursor(".", '.l:EndCol.')'
+      normal $
+      " exec 'call cursor(".", '.l:EndCol.')'
    endif
 
 endfunction
@@ -434,16 +463,20 @@ function! GetByteOffset()
 endfunction " >>>
 
 " shorten string <<<
-"ShortenString(getreg('\"'),60,'r')
-function! ShortenString(string, width, end)
+function! ShortenString(string, width, ...)
+   let l:where = get(a:, 1, 'r')
    let l:StringWidth = strwidth(a:string)
-
+   if a:width <= 0
+      return ''
+   endif
    if l:StringWidth <= a:width
       return a:string
    else
-      if a:end == 'l' " left
+      if l:where == 'l'     " left
          return "…" . strpart(a:string, l:StringWidth-(a:width-1))
-      else            " right
+      elseif l:where == 'm' " middle
+         return strpart(a:string, 0, (a:width/2)) . "…" . strpart(a:string, l:StringWidth-(((a:width+1)/2)-1))
+      else                  " right
          return strpart(a:string, 0, (a:width-1)) . "…"
       endif
    endif
@@ -491,100 +524,6 @@ function! Sign() " <<<
 endfunction " >>>
 " >>>
 
-" LaTeX <<<
-function! LaTeXMenu(modeprecmd)
-   let l:FontCmds = ["abort", "FontFamily", "FontSize"]
-   let l:c = 0
-   let l:c = confirm("LaTeX Menu","Font&Family\nFont&Size")
-   if l:c == 1
-      call FontFamily(a:modeprecmd)
-   endif
-   if l:c == 2
-      call FontSize(a:modeprecmd)
-   endif
-endfunction
-
-function! FontFamily(modeprecmd)
-   let l:FontFamilies = ["abort", "textbf", "textit", "textup", "textsl", "textsc", "textrm", "textsf", "texttt"]
-   let l:c = 0
-   let l:c = confirm("Font Family","text&bf\ntext&it\ntext&up\ntext&sl\ntexts&c\ntext&rm\ntexts&f\ntext&tt")
-   if l:c != 0
-      exe 'call TeXEmbrace("' . a:modeprecmd . '", "' . l:FontFamilies[l:c] . '")'
-   endif
-endfunction
-
-function! FontSize(modeprecmd)
-   let l:FontSizes = ["abort", "tiny", "scriptsize", "footnotesize", "small", "large", "Large", "LARGE", "huge", "Huge", "HUGE"]
-   let l:c = 0
-   let l:c = confirm("Font Size","&tiny\ns&criptsize\n&footnotesize\n&small\n&large\nL&arge\nLA&RGE\n&huge\nHu&ge\nHUG&E", 3)
-   if l:c != 0
-      exe 'call TeXEmbrace("' . a:modeprecmd . '", "' . l:FontSizes[l:c] . '")'
-   endif
-endfunction
-
-function! TeXEmbrace(modeprecmd, texcmd)
-   exe "normal " . a:modeprecmd . "xi{}\<ESC>PF{i\\=a:texcmd\<CR>"
-endfunction
-
-let s:InitMenu = 'Font'
-let s:NextMenu = ''
-
-function! LatexFontContinue()
-   let l:NextMenu = get(v:completed_item, 'user_data', '')
-   if (l:NextMenu == '') || (l:NextMenu == '_END_')
-      let s:NextMenu = ''
-   else
-      let s:NextMenu = l:NextMenu
-      call feedkeys("\<BS>\<C-x>\<C-u>")
-   endif
-endfunction
-
-function! LatexFont(findstart, base)
-   if a:findstart
-      let line = getline('.')
-      let start = col('.') - 1
-      while start > 0 && line[start - 1] =~ '\a'
-         let start -= 1
-      endwhile
-      return start
-   else
-      let menus = {
-               \     'Font':[{'word':a:base, 'abbr':'Font Family', 'dup':1, 'user_data':'FontFamily'},
-               \             {'word':a:base, 'abbr':'Font Style' , 'dup':1, 'user_data':'FontStyle' },
-               \             {'word':a:base, 'abbr':'Font Size'  , 'dup':1, 'user_data':'FontSize'  }],
-               \
-               \     'FontFamily':[{'word':'\textrm{'.a:base.'}', 'user_data':'_END_'},
-               \                   {'word':'\textsf{'.a:base.'}', 'user_data':'_END_'},
-               \                   {'word':'\texttt{'.a:base.'}', 'user_data':'_END_'}],
-               \
-               \     'FontStyle':[{'word':'\textmd{'.a:base.'}', 'user_data':'_END_'},
-               \                  {'word':'\textbf{'.a:base.'}', 'user_data':'_END_'},
-               \                  {'word':'\textup{'.a:base.'}', 'user_data':'_END_'},
-               \                  {'word':'\textit{'.a:base.'}', 'user_data':'_END_'},
-               \                  {'word':'\textsl{'.a:base.'}', 'user_data':'_END_'},
-               \                  {'word':'\textsc{'.a:base.'}', 'user_data':'_END_'}],
-               \
-               \     'FontSize':[{'word':'{\tiny '.a:base.'}'        , 'user_data':'_END_'},
-               \                 {'word':'{\scriptsize '.a:base.'}'  , 'user_data':'_END_'},
-               \                 {'word':'{\footnotesize '.a:base.'}', 'user_data':'_END_'},
-               \                 {'word':'{\small '.a:base.'}'       , 'user_data':'_END_'},
-               \                 {'word':'{\normalsize '.a:base.'}'  , 'user_data':'_END_'},
-               \                 {'word':'{\large '.a:base.'}'       , 'user_data':'_END_'},
-               \                 {'word':'{\Large '.a:base.'}'       , 'user_data':'_END_'},
-               \                 {'word':'{\LARGE '.a:base.'}'       , 'user_data':'_END_'},
-               \                 {'word':'{\huge '.a:base.'}'        , 'user_data':'_END_'},
-               \                 {'word':'{\Huge '.a:base.'}'        , 'user_data':'_END_'}]
-               \  }
-
-      if s:NextMenu == ''
-         let s:NextMenu = s:InitMenu
-      endif
-
-      return {'words':menus[s:NextMenu], 'refresh':'always'}
-   endif
-endfunction
-" >>>
-
 " clean up <<<
 function! CleanUp()
       call delete(g:BalloonText)
@@ -595,7 +534,7 @@ endfunction
 
 " change register type <<<
 function! ChangeRegType(RegName, ...)
-" 1 optional parameter for the new regtype ("c", "l" or "v")
+" 1 optional parameter for the new regtype ("c", "l" or "b")
 " if omitted cycle through characterwise, linewise, blockwise
 
    let l:CurRegType = getregtype(a:RegName)
@@ -606,9 +545,9 @@ function! ChangeRegType(RegName, ...)
    endif
 
    " regtype name conversion for readabilty only
-   if l:CurRegType == "v"
+   if l:CurRegType ==# "v"
       let l:CurRegType = "c"
-   elseif l:CurRegType == "V"
+   elseif l:CurRegType ==# "V"
       let l:CurRegType = "l"
    else
       let l:CurRegType = "b"
@@ -678,55 +617,6 @@ function! MakeRegExSafe(str)
    return '\V'.substitute(a:str, '\\', '\\\\', 'g')
 endfunction " >>>
 
-" auto completion <<<
-function! Complete(shift_tab)
-
-   "snippets   for if while etc. see snipmate
-   "omni  : . ->
-   "filename / \
-   "tags
-   "keywords
-   "tab
-
-   let omni_pattern = '\k\+\(\.\|->\|:\)\k*$'
-   let file_pattern = (has('win32') || has('win64')) ? '\\\|\/' : '\/'
-   let noselect_correction = &completeopt =~ 'noselect' ? "\<C-P>" : "\<C-P>\<C-P>"
-
-   if pumvisible()
-      return a:shift_tab ? "\<C-P>" : "\<C-N>"
-   else
-      if a:shift_tab
-         return "\<C-V>\<TAB>"
-      end
-   endif
-
-   let pos = getpos('.')
-   let substr = matchstr(strpart(getline(pos[1]), 0, pos[2]-1), "[^ \t]*$")
-
-   if empty(substr)
-      return a:shift_tab ? "\<C-V>\<TAB>" : "\<TAB>"
-   endif
-
-   "omni
-   if !empty(&omnifunc) && match(substr, omni_pattern) != -1
-      return a:shift_tab ? "\<C-X>\<C-O>" : "\<C-X>\<C-O>" . noselect_correction
-   endif
-
-   "filename
-   if match(substr, file_pattern) != -1
-      return a:shift_tab ? "\<C-X>\<C-F>" : "\<C-X>\<C-F>" . noselect_correction
-   endif
-
-   "tags & keywords -> complete option is set accordingly
-   return a:shift_tab ? "\<C-P>" : "\<C-N>"
-
-   "tab -> never reached, not sure if I need it at all
-   "return a:shift_tab ? "\<C-V>\<TAB>" : "\<TAB>"
-
-   " prevent returning 0 -> never reached
-   return ""
-endfunction " >>>
-
 " edit register <<<
 function! EditReg(reg)
 
@@ -751,9 +641,9 @@ function! EditReg(reg)
       startinsert!
    endif
 
-   execute 'nnoremap <buffer> <silent> <CR>  :call setreg("'.a:reg.'", getline(1,"$")) <BAR> silent! bwipeout! __EDITREG__<CR>'
+   execute "nnoremap <buffer> <silent> <CR>  :call setreg('" . a:reg . "', getline(1,'$')) <BAR> silent! bwipeout! __EDITREG__<CR>"
 
-   execute 'inoremap <buffer> <silent> <CR>  <ESC>:call setreg("'.a:reg.'", getline(1,"$")) <BAR> silent! bwipeout! __EDITREG__<CR>'
+   execute "inoremap <buffer> <silent> <CR>  <ESC>:call setreg('" . a:reg . "', getline(1,'$')) <BAR> silent! bwipeout! __EDITREG__<CR>"
 
    nnoremap <buffer> <silent> <ESC> :silent! bwipeout! __EDITREG__<CR>
 
@@ -980,20 +870,22 @@ endfunction " >>>
 
 " find <<<
 function! Find(args)
-   lexpr! systemlist('fd ' . a:args)
+   call delete('/tmp/vimFind.tmp')
+   call system('fd ' . a:args . ' > /tmp/vimFind.tmp')
+   lgetfile /tmp/vimFind.tmp
    lopen
 endfunction " >>>
 
 " grep <<<
 function! Grep(args)
-   exec 'silent lgrep ' . a:args
+   exec 'silent lgrep! ' . a:args
    lopen
 endfunction " >>>
 
 " grep buffers <<<
 function! GrepBuffers(args)
    call setloclist(winnr(), [])
-   exec 'bufdo silent lgrepadd ' . a:args
+   exec 'bufdo silent lgrepadd ' . a:args . ' %'
    lopen
 endfunction " >>>
 
@@ -1136,6 +1028,59 @@ function! YankPath()
 endfunction
 " >>>
 
+" serialize data <<<
+function! SerializeData(var, file)
+    " let serialized = string(a:var)
+    " call writefile([serialized], a:file)
+    call writefile([string(a:var)], a:file)
+endfun " >>>
+
+" read data <<<
+function! ReadData(file)
+    " execute "let result = " . readfile(a:file)[0]
+    execute "let result = " . join(readfile(a:file))
+    return result
+endfun " >>>
+
+" join lines <<<
+function! Join(trim, ...) range
+   let l:search = getreg('/')
+   let l:sep = get(a:, 1, '')
+   if a:firstline == a:lastline
+      let l:lastsepline  = a:lastline
+      let l:lasttrimline = a:lastline + 1
+      if l:lasttrimline > line('$')
+         let l:lasttrimline = line('$')
+      endif
+      let l:joinrange = a:firstline
+   else
+      let l:lastsepline  = a:lastline - 1
+      let l:lasttrimline = a:lastline
+      let l:joinrange = a:firstline . ';' . a:lastline
+   endif
+   if (a:trim == "!") && (a:firstline != l:lasttrimline)
+         let l:firsttrimline = a:firstline + 1
+         silent execute l:firsttrimline . ';' . l:lasttrimline . 's/^.*$/\=trim(getline("."))/'
+   endif
+   silent execute a:firstline . ';' . l:lastsepline . 's/$/' . l:sep . '/'
+   silent execute l:joinrange . 'j!'
+   call setreg('/', l:search)
+endfunction " >>>
+
+" add timestamp <<<
+function! InsertTimeStamp()
+   call complete(col('.'), [strftime("%Y-%m-%d"), strftime("%Y-%m-%dT%H:%M"), strftime("%d. %B %Y"), strftime("%H:%M")])
+   return ''
+endfunction " >>>
+
+" clear registers <<<
+function! ClearRegisters()
+   let regs=split('abcdefghijklmnopqrstuvwxyz0123456789', '\zs')
+   for r in regs
+      call setreg(r, [])
+   endfor
+endfunction " >>>
+
 " UNDER DEVELOPMENT <<<
 " get misspelled words <<<
 function! GetMisspelledWords()
@@ -1179,23 +1124,191 @@ endfunction
 " nnoremap +c :call TestColor()<CR>:echo g:Color<CR>
 " >>>
 " User Completion <<<
-" function! UserCompletion(findstart, base)
-"    if a:findstart
-"       let line = getline('.')
-"       let start = col('.') - 1
-"       if start > 0
-"          if line[start] == '('
-"             return start
-"          else
-"             return -3
-"          endif
-"       else
-"          return -3
-"       endif
-"    else
-"       return {'words':menus[s:NextMenu], 'refresh':'always'}
-"    endif
-" endfunction " >>>
+function! GetWords(String)
+   let l:BufLines = getbufline('%', 1, '$')
+   let l:WordList = []
+   for line in l:BufLines
+      " echom "line: " . line
+      let l:Start=0
+      while v:true
+         " let l:Match2 = matchstrpos(line, '\<' . escape(a:String, '\*') . ' ', l:Start)
+         " let l:Match = matchstrpos(line, '\<' . escape(a:String, '\*') . ' [^\ ]\+', l:Start)
+         let l:Match2 = matchstrpos(line, '\<' . escape(a:String, '\*') . '\s', l:Start)
+         let l:Match = matchstrpos(line, '\<' . escape(a:String, '\*') . ' \S\+', l:Start)
+         if l:Match[0] == ''
+            break
+         else
+            let l:Start = l:Match2[2]
+            " echom "word match: " . l:Match[0]
+            call add(l:WordList, matchlist(l:Match[0], ' \(.*\)')[1])
+         endif
+      endwhile
+   endfor
+   return l:WordList
+endfunction
+
+function! GetLines(String)
+   let l:BufLines = getbufline('%', 1, '$')
+   let l:LineList = []
+   for line in l:BufLines
+      " echom "line: " . line
+      let l:Start=0
+      while v:true
+         " let l:Match2 = matchstrpos(line, '\<' . escape(a:String, '\*') . ' ', l:Start)
+         " let l:Match = matchstrpos(line, '\<' . escape(a:String, '\*') . ' [^\ ]\+', l:Start)
+         let l:Match2 = matchstrpos(line, '\<' . escape(a:String, '\*') . '\s', l:Start)
+         let l:Match = matchstrpos(line, '\<' . escape(a:String, '\*') . '.*', l:Start)
+         if l:Match[0] == ''
+            break
+         else
+            let l:Start = l:Match2[2]
+            " echom "word match: " . l:Match[0]
+            call add(l:LineList, matchlist(l:Match[0], ' \(.*\)')[1])
+         endif
+      endwhile
+   endfor
+   return l:LineList
+endfunction
+ 
+" FEATURES
+" super foo bar trouper
+" super foo bra trouper
+" word completion based on prev word
+" 1. foo    -> completes with bar, bra
+" 2. foo ba -> completes with bar
+" 3.        -> completes with foo
+" line completion based on prev word
+" 4. foo    -> completes with bar, bra and trouper
+" 5. foo ba -> completes with bar trouper
+" 6.        -> completes with foo bar trouper, foo bra trouper
+
+function! CompleteWordFromPrevWord(findstart, base)
+   if a:findstart
+      messages clear
+      let l:Line = getline('.')
+      let l:Start = col('.') - 1
+      if (l:Line[l:Start-1] == ' ') || (l:Start == 0)
+         echom "findstart: no word at cursor " . l:Start
+         return l:Start
+      else
+         echom "findstart: word at cursor"
+         while (l:Start > 0) && (l:Line[l:Start - 1] =~ '\S')
+            let l:Start -= 1
+         endwhile
+         echom "findstart: word at col: " . l:Start
+         echom "findstart: first char of word: " . l:Line[l:Start]
+         return l:Start
+      endif
+   else
+
+      let l:Line = getline('.')
+
+      " if a:base == ''
+      " if strlen(a:base) == 0
+      " endif
+
+      " let l:IsAtWord = 0
+      " echom "complete: is at word: " . l:Line
+      " echom "complete: is at word: " . l:IsAtWord . " " .getline('.')[col('.')-1] . " " . getline('.')
+      " if l:Line[col('.')-1] =~ "\S"
+      "    let l:IsAtWord = 1
+      " endif
+      " echom "complete: is at word: " . l:IsAtWord
+
+      let start = col('.') - 2
+      let l:Length = 0
+
+      while (start > 0) && (l:Line[start] =~ '\s')
+         let start -= 1
+      endwhile
+
+      if (start <= 0)
+         echom "complete: no prev word"
+      endif
+      echom "complete: start is: " . start
+      echom "complete: first char of word: " . l:Line[start]
+
+      " return {'words': ['marco', 'trosi'], 'refresh':'always'}
+
+      if(start <= 0)
+
+         if l:IsAtWord == 1
+            echom "complete: oh no prev word but cursor at word"
+         endif
+
+         let l:PrevLineNum = GetPrevNonBlankLine()
+         echom "complete: previous non blank line num is: " . l:PrevLineNum
+         let l:PrevLine = getline(l:PrevLineNum)
+         echom "complete: previous non blank line is: " . l:PrevLine
+         if g:UserCompletionFunc == 0 " complete word based on previous word
+            return {'words': [matchstr(l:PrevLine, '\S\+')], 'refresh':'always'}
+         else " complete line based on previous word
+            return {'words': [matchstr(l:PrevLine, '\S.*')], 'refresh':'always'}
+         endif
+
+      else
+         " go back til start of prev word
+         while (start > 0) && (l:Line[start - 1] =~ '\S')
+            let start -= 1
+            let l:Length += 1
+         endwhile
+         let l:Length += 1
+
+         let l:String = strpart(l:Line, start, l:Length)
+         echom "the word before the cursor is: " . l:String
+         if g:UserCompletionFunc == 0
+            let l:WordList = GetWords(String)
+         else
+            let l:WordList = GetLines(String)
+         endif
+         return {'words': l:WordList, 'refresh':'always'}
+      endif
+
+   endif
+endfunction
+
+function! CompleteLineFromPrevWord(findstart, base)
+   messages clear
+   echom "complete line from prev word"
+endfunction
+
+function! CompleteWordFromEnvVar(findstart, base)
+   if a:findstart
+      let l:Line = getline('.')
+      let l:CursorCol = col('.') - 1
+      let l:LastCharCol = l:CursorCol - 1
+      let l:FirstCharCol = l:LastCharCol
+      while (l:FirstCharCol > 0) && (l:Line[l:FirstCharCol-1] =~ '\w')
+         let l:FirstCharCol -= 1
+      endwhile
+      return l:FirstCharCol
+   else
+      let l:EnvVars = environ()
+      let l:Matches = []
+      for [key, value] in items(l:EnvVars)
+         if match(key, '^' . a:base) != -1
+            if g:UserCompletionFunc == 2 " complete env var name
+               call add(l:Matches, {'word':key, 'abbr':key, 'menu':ShortenString(value, 50, 'm')})
+            else " expand env var
+               call add(l:Matches, {'word':value, 'abbr':key, 'menu':ShortenString(value, 50, 'm')})
+            endif
+         endif
+      endfor
+      return {'words':l:Matches, 'refresh':'always'}
+   endif
+endfunction
+
+function! UserCompletion(findstart, base)
+   if g:UserCompletionFunc == 0
+      return CompleteWordFromPrevWord(a:findstart, a:base)
+   elseif g:UserCompletionFunc == 1
+      return CompleteWordFromPrevWord(a:findstart, a:base)
+   elseif g:UserCompletionFunc == 2
+      return CompleteWordFromEnvVar(a:findstart, a:base)
+   elseif g:UserCompletionFunc == 3
+      return CompleteWordFromEnvVar(a:findstart, a:base)
+   endif
+endfunction " >>>
 " Popup Test <<<
 " let g:BufList = ["foo", "bar", "super", "trooper", "vim magic"]
 "
@@ -1209,6 +1322,199 @@ endfunction
 "
 " nnoremap <space><space> :call ListBuffers()<cr>
 " >>>
+" LaTeX <<<
+function! LaTeXMenu(modeprecmd)
+   let l:FontCmds = ["abort", "FontFamily", "FontSize"]
+   let l:c = 0
+   let l:c = confirm("LaTeX Menu","Font&Family\nFont&Size")
+   if l:c == 1
+      call FontFamily(a:modeprecmd)
+   endif
+   if l:c == 2
+      call FontSize(a:modeprecmd)
+   endif
+endfunction
+
+function! FontFamily(modeprecmd)
+   let l:FontFamilies = ["abort", "textbf", "textit", "textup", "textsl", "textsc", "textrm", "textsf", "texttt"]
+   let l:c = 0
+   let l:c = confirm("Font Family","text&bf\ntext&it\ntext&up\ntext&sl\ntexts&c\ntext&rm\ntexts&f\ntext&tt")
+   if l:c != 0
+      exe 'call TeXEmbrace("' . a:modeprecmd . '", "' . l:FontFamilies[l:c] . '")'
+   endif
+endfunction
+
+function! FontSize(modeprecmd)
+   let l:FontSizes = ["abort", "tiny", "scriptsize", "footnotesize", "small", "large", "Large", "LARGE", "huge", "Huge", "HUGE"]
+   let l:c = 0
+   let l:c = confirm("Font Size","&tiny\ns&criptsize\n&footnotesize\n&small\n&large\nL&arge\nLA&RGE\n&huge\nHu&ge\nHUG&E", 3)
+   if l:c != 0
+      exe 'call TeXEmbrace("' . a:modeprecmd . '", "' . l:FontSizes[l:c] . '")'
+   endif
+endfunction
+
+function! TeXEmbrace(modeprecmd, texcmd)
+   exe "normal " . a:modeprecmd . "xi{}\<ESC>PF{i\\=a:texcmd\<CR>"
+endfunction
+
+let s:InitMenu = 'Font'
+let s:NextMenu = ''
+
+function! LatexFontContinue()
+   let l:NextMenu = get(v:completed_item, 'user_data', '')
+   if (l:NextMenu == '') || (l:NextMenu == '_END_')
+      let s:NextMenu = ''
+   else
+      let s:NextMenu = l:NextMenu
+      call feedkeys("\<BS>\<C-x>\<C-u>")
+   endif
+endfunction
+
+function! LatexFont(findstart, base)
+   if a:findstart
+      let line = getline('.')
+      let start = col('.') - 1
+      while start > 0 && line[start - 1] =~ '\a'
+         let start -= 1
+      endwhile
+      return start
+   else
+      let menus = {
+               \     'Font':[{'word':a:base, 'abbr':'Font Family', 'dup':1, 'user_data':'FontFamily'},
+               \             {'word':a:base, 'abbr':'Font Style' , 'dup':1, 'user_data':'FontStyle' },
+               \             {'word':a:base, 'abbr':'Font Size'  , 'dup':1, 'user_data':'FontSize'  }],
+               \
+               \     'FontFamily':[{'word':'\textrm{'.a:base.'}', 'user_data':'_END_'},
+               \                   {'word':'\textsf{'.a:base.'}', 'user_data':'_END_'},
+               \                   {'word':'\texttt{'.a:base.'}', 'user_data':'_END_'}],
+               \
+               \     'FontStyle':[{'word':'\textmd{'.a:base.'}', 'user_data':'_END_'},
+               \                  {'word':'\textbf{'.a:base.'}', 'user_data':'_END_'},
+               \                  {'word':'\textup{'.a:base.'}', 'user_data':'_END_'},
+               \                  {'word':'\textit{'.a:base.'}', 'user_data':'_END_'},
+               \                  {'word':'\textsl{'.a:base.'}', 'user_data':'_END_'},
+               \                  {'word':'\textsc{'.a:base.'}', 'user_data':'_END_'}],
+               \
+               \     'FontSize':[{'word':'{\tiny '.a:base.'}'        , 'user_data':'_END_'},
+               \                 {'word':'{\scriptsize '.a:base.'}'  , 'user_data':'_END_'},
+               \                 {'word':'{\footnotesize '.a:base.'}', 'user_data':'_END_'},
+               \                 {'word':'{\small '.a:base.'}'       , 'user_data':'_END_'},
+               \                 {'word':'{\normalsize '.a:base.'}'  , 'user_data':'_END_'},
+               \                 {'word':'{\large '.a:base.'}'       , 'user_data':'_END_'},
+               \                 {'word':'{\Large '.a:base.'}'       , 'user_data':'_END_'},
+               \                 {'word':'{\LARGE '.a:base.'}'       , 'user_data':'_END_'},
+               \                 {'word':'{\huge '.a:base.'}'        , 'user_data':'_END_'},
+               \                 {'word':'{\Huge '.a:base.'}'        , 'user_data':'_END_'}]
+               \  }
+
+      if s:NextMenu == ''
+         let s:NextMenu = s:InitMenu
+      endif
+
+      return {'words':menus[s:NextMenu], 'refresh':'always'}
+   endif
+endfunction
+" >>>
+" auto completion <<<
+function! Complete(shift_tab)
+
+   "snippets   for if while etc. see snipmate
+   "omni  : . ->
+   "filename / \
+   "tags
+   "keywords
+   "tab
+
+   let omni_pattern = '\k\+\(\.\|->\|:\)\k*$'
+   let file_pattern = (has('win32') || has('win64')) ? '\\\|\/' : '\/'
+   let noselect_correction = &completeopt =~ 'noselect' ? "\<C-P>" : "\<C-P>\<C-P>"
+
+   if pumvisible()
+      return a:shift_tab ? "\<C-P>" : "\<C-N>"
+   else
+      if a:shift_tab
+         return "\<C-V>\<TAB>"
+      end
+   endif
+
+   let pos = getpos('.')
+   let substr = matchstr(strpart(getline(pos[1]), 0, pos[2]-1), "[^ \t]*$")
+
+   if empty(substr)
+      return a:shift_tab ? "\<C-V>\<TAB>" : "\<TAB>"
+   endif
+
+   "omni
+   if !empty(&omnifunc) && match(substr, omni_pattern) != -1
+      return a:shift_tab ? "\<C-X>\<C-O>" : "\<C-X>\<C-O>" . noselect_correction
+   endif
+
+   "filename
+   if match(substr, file_pattern) != -1
+      return a:shift_tab ? "\<C-X>\<C-F>" : "\<C-X>\<C-F>" . noselect_correction
+   endif
+
+   "tags & keywords -> complete option is set accordingly
+   return a:shift_tab ? "\<C-P>" : "\<C-N>"
+
+   "tab -> never reached, not sure if I need it at all
+   "return a:shift_tab ? "\<C-V>\<TAB>" : "\<TAB>"
+
+   " prevent returning 0 -> never reached
+   return ""
+endfunction " >>>
+" test f keys <<<
+function! TestFKeys()
+   for m in [0,1] " meta/alt
+      for c in [0,1] " ctrl
+         for s in [0,1] " shift
+            for f in range(1,12)
+               let l:keys = ""
+               if s | let l:keys = l:keys .. "S-" | endif
+               if c | let l:keys = l:keys .. "C-" | endif
+               if m | let l:keys = l:keys .. "M-" | endif
+               let l:keys = l:keys .. "F" .. f
+               execute "inoremap <" .. l:keys .. "> " .. l:keys .. " is working<CR>"
+            endfor
+         endfor
+      endfor
+   endfor
+endfunction " >>>
+" run script <<<
+function! RunScript() abort
+   let l:Interpreters = {'py': 'python', 'lua': 'lua', 'sh': 'bash'}
+   let l:TermBufNr = 0
+   let l:TerminalOpen = 0
+   " get file extension
+   let l:FileExt  = expand('%:e')
+   " get file path
+   let l:FilePath = expand('%:p')
+   " get list of windows
+   let l:WinList = getwininfo()
+   " find terminal window
+   for w in l:WinList
+      if w["terminal"]
+         let l:TermBufNr = w["bufnr"]
+         let l:TerminalOpen = 1
+         break
+      endif
+   endfor
+   if l:TerminalOpen == 0
+      " if not open create one
+      vertical terminal
+      " back to win
+      wincmd p
+      let l:WinList = getwininfo()
+      for w in l:WinList
+         if w["terminal"]
+            let l:TermBufNr = w["bufnr"]
+            break
+         endif
+      endfor
+   endif
+   " run script
+   call term_sendkeys(l:TermBufNr, l:Interpreters[l:FileExt] .. " " .. l:FilePath .."\n") " use \r on macos
+endfunction " >>>
 " >>>
 " >>>
 
@@ -1217,8 +1523,10 @@ command! -range Left   call AlignBlock('l')
 command! -range Center call AlignBlock('c')
 command! -range Right  call AlignBlock('r')
 command! -nargs=1 EditReg call EditReg(<f-args>)
+command! -bang -range -nargs=? Join <line1>,<line2>call Join("<bang>", <f-args>)
 command! -range -nargs=* ReArrangeColumns <line1>,<line2>call ReArrangeColumns(<f-args>)
 command! -nargs=* Grep call Grep('<args>')
+command! -nargs=* GrepBuffers call GrepBuffers('<args>')
 command! -nargs=* Find call Find('<args>')
 command! -range -nargs=0 Sum echo Sum(ExtractNumbersFromString(GetVisualSelection()))
 command! -range=% -nargs=? -complete=file New silent <line1>,<line2>yank x | enew | put! x | $d_ | if(<q-args> != '') | silent write <args> | endif
@@ -1227,14 +1535,113 @@ command! F silent! !open .
 command! SD let g:SD=getcwd()
 command! RD call chdir(g:SD)
 command! -nargs=1 MKCD call mkdir(<f-args>, "p") | call chdir(<f-args>)
-command! -nargs=? CD call system('start /wait cmd /c "fd -t d '.<q-args>.' | fzf --reverse > D:\temp\fzf.out || del D:\temp\fzf.out"') | if filereadable('D:\temp\fzf.out') | call chdir(readfile('D:\temp\fzf.out', '', 1)[0]) | endif
-command! -nargs=? FCD call system('start /wait cmd /c "fd -t f '.<q-args>.' | fzf --reverse > D:\temp\fzf.out || del D:\temp\fzf.out"') | if filereadable('D:\temp\fzf.out') | call chdir(GetPath(readfile('D:\temp\fzf.out', '', 1)[0])) | endif
-command! -nargs=? Edit call system('start /wait cmd /c "fd -t f '.<q-args>.' | fzf -m --reverse > D:\temp\fzf.out || del D:\temp\fzf.out"') | if filereadable('D:\temp\fzf.out') | for fname in readfile('D:\temp\fzf.out') | silent execute ':e ' . fname | endfor | endif
 
-" let Output=system("start fzf")
-" vertical terminal ++close fzf
-" :w !cat - >> /foo/samples
-" command! -nargs=0 -range=% NoX32 <line1>,<line2>s;^\s*/\*\~[FEAIOTK-]\*/\s*\n;;
+" set up scripts <<<
+if has("win32")
+   " let s:ChangeDirCmd = '/Users/marcotrosi/Code/release/bin/c.sh'
+   " let s:ChangeDirTmp = '/tmp/c.tmp'
+else
+   let s:ChangeDirCmd    = '/Users/marcotrosi/.vim/bin/c.sh'
+   let s:ChangeDirTmp    = '/tmp/c.tmp'
+   let s:EditFilesCmd    = '/Users/marcotrosi/.vim/bin/e.sh'
+   let s:EditFilesTmp    = '/tmp/e.tmp'
+   let s:PasteRegCmd     = '/Users/marcotrosi/.vim/bin/r.sh'
+   let s:PasteRegTmp     = '/tmp/r.tmp'
+   let s:PasteRegPreTmp  = '/tmp/r_pre.tmp'
+   let s:SelectCmd       = '/Users/marcotrosi/.vim/bin/b.sh'
+   let s:SelectBufTmp    = '/tmp/b.tmp'
+   let s:SelectBufPreTmp = '/tmp/b_pre.tmp'
+endif
+" >>>
+
+" change directory <<<
+" command! -nargs=? CD call system('start /wait cmd /c "fd -t d '.<q-args>.' | fzf --reverse > D:\temp\fzf.out || del D:\temp\fzf.out"') | if filereadable('D:\temp\fzf.out') | call chdir(readfile('D:\temp\fzf.out', '', 1)[0]) | endif
+function! ChangeDir(j, s)
+   if filereadable(s:ChangeDirTmp)
+      call chdir(readfile(s:ChangeDirTmp, '', 1)[0])
+   endif
+endfunction
+
+function! CD()
+   let l:TermBufNum = term_start(s:ChangeDirCmd, {'term_name':'change directory', 'hidden':0, 'term_finish':'close', 'norestore':1, 'vertical':1, 'exit_cb':'ChangeDir'})
+   " let l:WinID = popup_create(l:TermBufNum, {'minwidth': 50, 'minheight': 20})
+endfunction
+
+command! -nargs=? CD call CD()
+" >>>
+
+" edit files <<<
+" command! -nargs=? Edit call system('start /wait cmd /c "fd -t f '.<q-args>.' | fzf -m --reverse > D:\temp\fzf.out || del D:\temp\fzf.out"') | if filereadable('D:\temp\fzf.out') | for fname in readfile('D:\temp\fzf.out') | silent execute ':e ' . fname | endfor | endif
+function! EditFiles(j, s)
+   wincmd p
+   for fname in readfile(s:EditFilesTmp) 
+      silent execute ':e ' . fname
+   endfor
+endfunction
+
+function! Edit()
+   let l:TermBufNum = term_start(s:EditFilesCmd, {'term_name':'edit files', 'hidden':0, 'term_finish':'close', 'norestore':1, 'vertical':1, 'exit_cb':'EditFiles'})
+   " let l:WinID = popup_create(l:TermBufNum, {'minwidth': 50, 'minheight': 20})
+endfunction
+
+command! -nargs=? Edit call Edit()
+" >>>
+
+" paste register <<<
+function! PasteReg(direction)
+   let l:Cmds = []
+   let l:PasteRegDirection = a:direction
+   let l:WinID = 0
+
+   function! PasteRegCallback(job, status) closure
+      if filereadable(s:PasteRegTmp)
+         call add(l:Cmds, 'wincmd p')
+         let l:Cmd = 'norm "' . readfile(s:PasteRegTmp, '', 1)[0][0] . l:PasteRegDirection
+         call add(l:Cmds, l:Cmd)
+         for cmd in l:Cmds
+            execute cmd
+         endfor
+      endif
+   endfunction
+
+   execute 'silent redir! > ' . s:PasteRegPreTmp
+   registers
+   redir END
+
+   let l:TermBufNum = term_start(s:PasteRegCmd, {'term_name':'paste register', 'hidden':0, 'term_finish':'close', 'norestore':1, 'vertical':1, 'exit_cb':'PasteRegCallback'})
+   " let l:WinID = popup_create(l:TermBufNum, {'minwidth': 50, 'minheight': 20})
+endfunction " >>>
+
+function! SelectBuf()
+
+   let l:Cmds = []
+   let l:NumOfBuffers = bufnr('$')
+   let l:Buffers = []
+
+   function! SelectBufCallback(job, status) closure
+
+      if filereadable(s:SelectBufTmp)
+
+         call add(l:Cmds, 'wincmd p')
+         let l:Cmd = 'norm "' . readfile(s:SelectBufTmp, '', 1)[0][0]
+         call add(l:Cmds, l:Cmd)
+
+         for cmd in l:Cmds
+            execute cmd
+         endfor
+      endif
+   endfunction
+
+   let l:i = 0 | while l:i <= l:NumOfBuffers | let l:i = l:i + 1
+      if buflisted(l:i)
+         call add(l:Buffers, l:i . " " . bufname(l:i))
+      endif
+   endwhile
+   call writefile(l:Buffers, s:SelectBufPreTmp)
+
+   " let l:TermBufNum = term_start(s:SelectBufCmd, {'term_name':'select buffer', 'hidden':0, 'term_finish':'close', 'norestore':1, 'vertical':1, 'exit_cb':'SelectBufCallback'})
+   " let l:WinID = popup_create(l:TermBufNum, {'minwidth': 50, 'minheight': 20})
+endfunction
 " >>>
 
 " settings <<<
@@ -1272,8 +1679,10 @@ set ruler
 set shiftround
 set showcmd
 set showmode
+" set splitright
 set wildmenu
 set wrapscan
+set termguicolors
 set title
 " set undofile
 " >>>
@@ -1287,8 +1696,11 @@ set shiftwidth=0
 set backupdir=~/.vim/backupdir,/tmp
 "set balloonexpr=Balloon()
 set belloff=all
+set complete=.,w,b,u
 " set complete=.,w,b,u,t,i
-" set completeopt=menu,preview
+" set completeopt=menu,longest,noinsert,noselect
+set completefunc=UserCompletion
+set dictionary=/usr/share/dict/words
 set directory=~/.vim/swapdir,/tmp
 set encoding=utf-8
 set errorformat=%f\ %l\ %m
@@ -1298,6 +1710,7 @@ set errorformat+=luac:\ %f:%l:\ %m
 set fillchars=vert:╏,fold:━
 set foldmarker=<<<,>>>
 set foldmethod=marker
+set formatoptions=jlqr
 set grepprg=rg\ --vimgrep\ $*
 set grepformat=%f:%l:%c:%m
 set keywordprg=:help
@@ -1307,7 +1720,7 @@ set mousemodel=popup_setpos
 set nrformats=bin,hex
 set path=.,,** " use :checkpath
 set sessionoptions=buffers,curdir
-set shortmess="fIlmnxtToO"
+set shortmess=fIlmnxtToO
 set spelllang=en
 set spellsuggest=9
 set tags=.tags
@@ -1320,12 +1733,16 @@ sign define E text=× texthl=red
 sign define W text=! texthl=org
 sign define I text=i texthl=blu
 sign define O text=✔ texthl=grn
+" https://www.torsten-horn.de/techdocs/ascii.htm
 " https://en.wikipedia.org/wiki/Box-drawing_character
 " https://en.wikipedia.org/wiki/Box_Drawing_(Unicode_block)
 " https://en.wikipedia.org/wiki/Block_Elements
 " https://en.wikipedia.org/wiki/Geometric_Shapes
 sign define A text=▶︎ texthl=red
 sign define B text=■ texthl=red
+" ◯ ◑ ●
+" ◐ ▲ ◆
+" →
 
 "function! Diff()
    " let l:opt = ''
@@ -1369,22 +1786,19 @@ augroup VIMRC
 
    autocmd BufEnter makefile set noexpandtab
    autocmd BufLeave makefile set expandtab
-   "autocmd BufWritePre * call FixFile()
 
    autocmd VimLeavePre * call CleanUp()
    autocmd ColorScheme * call DefMatchColors() " TODO temporary til part of colorschemes
-   "autocmd WinLeave * let g:prevwin=win_getid()
-   "autocmd BufWritePost .crontab !crontab ~/.crontab
 
-   "set completefunc=LatexFont
-   "set completefunc=UserCompletion
-
+   autocmd CmdwinEnter * map <buffer> <S-CR> <C-c><C-e> " don't execute but put cmd in commandline
+   autocmd FileType help nnoremap <buffer> q :helpclose<cr>
 augroup END
 " >>>
 
 " plugin settings <<<
 " colorizer <<<
-let g:colorizer_startup = 0
+let g:colorizer_auto_color = 0
+let g:colorizer_colornames = 0
 " >>>
 " wildfire <<<
 " let g:wildfire_fuel_map  = "<ENTER>"
@@ -1401,7 +1815,6 @@ let g:DrChipTopLvlMenu= "&Plugins.&Align."
 " Align <<<
 xnoremap öa :Align<SPACE>
 nnoremap öa vip:Align<SPACE>
-nnoremap äa :call SetAlignCtrl()<CR>
 " >>>
 " Increment <<<
 " requires an @ character
@@ -1443,33 +1856,33 @@ let g:FdHint="fd [options] [pattern] [path, ...]\n
 
 " sh   |map          |cmd           |desc
 " -----|-------------|--------------|-----------------------------------------------
+" c    |<space>c     |:CD           |find directory and change dir'          done
 " f    |<space>f     |:Find -t f    |find files'                             done
-" d    |<space>d     |:Find -t d    |find directories'                       only possible with :lopen! which doesnt exist
+" d    |<space>d     |:Find -t d    |find directories'                       done
 " e    |<space>e     |:Edit         |find files and edit'                    done
 " g    |<space>g     |:Grep in dir  |grep recursive in directory'            done
-" g    |             |:Grep in buf  |grep in current buffer'                 
-" g    |             |:Grep in bufs |grep in open buffers'                   
-" gl   | none        |              |grep files and list names'
-" ge   | none        |              |grep files and edit'
-" c    |<space>c     |CD            |find directory and change dir'          done
-" fcd  |             |FCD           |find file      and change dir'          done
+"      |<space>G     |:Grep in bufs |grep in open buffers'                   done
 " fdf  |<space>v     |              |find files and diff files'
-" fE   |<space>E     |FE            |find file and open explorer'
-" dE   |<space>E     |DE            |find directory and open explorer'
 " mkcd | none        |MKCD          |create directory and change dir'        done
 " sd   | none        |SD            |store directory'                        done
 " rd   | none        |RD            |restore directory'                      done
 
+nnoremap <SPACE>b :call SelectBuf()<CR>
+" nnoremap <SPACE>t jump to tag fuzzy
+" nnoremap <SPACE>p open session fuzzy
+nnoremap <SPACE>r :silent call PasteReg('p')<CR>
+nnoremap <SPACE>R :silent call PasteReg('P')<CR>
 nnoremap <SPACE>f :echo g:FdHint<CR>:Find -t f<SPACE>
-"nnoremap <SPACE>d :echo g:FdHint<CR>:Find -t d<SPACE>
+nnoremap <SPACE>d :echo g:FdHint<CR>:Find -t d<SPACE>
 nnoremap <SPACE>c :CD<CR>
 nnoremap <SPACE>C :echo g:FdHint<CR>:CD<SPACE>
 nnoremap <SPACE>e :Edit<CR>
 nnoremap <SPACE>E :echo g:FdHint<CR>:Edit<SPACE>
 nnoremap <SPACE>g :echo g:RgHint<CR>:Grep<SPACE>
+nnoremap <SPACE>G :echo g:RgHint<CR>:GrepBuffers<SPACE>
+nnoremap <SPACE>h :call CycleColorscheme(0)<CR>
 
 "nnoremap ög
-
 nnoremap gö :call Grep('-F -w -s "' . expand('<cword>') . '" %')<CR>
 nnoremap gÖ :call Grep('-F -i "' . expand('<cword>') . '" %')<CR>
 xnoremap gö "gy:call Grep('-F -w -s "' . getreg('g') . '" %')<CR>
@@ -1504,7 +1917,7 @@ nnoremap cp :%bd<BAR>let v:this_session=''<CR>
 " Spell <<<
 nnoremap ör ]szz
 nnoremap öR [szz
-nnoremap är z=
+" nnoremap är z=
 " >>>
 " Search <<<
 nnoremap n nzz
@@ -1522,8 +1935,14 @@ nnoremap <SPACE><C-SPACE> /\c
 nnoremap <SPACE><S-SPACE> /\<\><left><left>
 nnoremap <SPACE><C-S-SPACE> /\c\<\><left><left>
 
-cnoremap <S-SPACE> <C-R><C-A>
-cnoremap <C-SPACE> <C-R><C-W>
+" cnoremap <S-SPACE> <C-R><C-A>
+" cnoremap <C-SPACE> <C-R><C-W>
+cnoremap äw <C-R><C-W>
+cnoremap äW <C-R><C-A>
+cnoremap äf <C-R><C-F>
+cnoremap äp <C-R><C-P>
+cnoremap äl <C-R><C-L>
+
 nnoremap g<SPACE> *N
 nnoremap g<C-SPACE> g*N
 nnoremap ch :nohl<CR>
@@ -1568,9 +1987,9 @@ snoremap <C-h> <Left>
 snoremap <C-l> <Right>
 nnoremap H :call JumpToStartOfLine()<CR>
 nnoremap L :call JumpToEndOfLine()<CR>
-nnoremap 0 :call JumpToStartOfLine()<CR>
-nnoremap ß :call JumpToEndOfLine()<CR>
-nnoremap $ :call JumpToEndOfLine()<CR>
+" nnoremap 0 :call JumpToStartOfLine()<CR>
+" nnoremap ß :call JumpToEndOfLine()<CR>
+" nnoremap $ :call JumpToEndOfLine()<CR>
 nnoremap W e
 nnoremap B ge
 nnoremap ; ,
@@ -1579,8 +1998,6 @@ nnoremap , ;
 " nnoremap <expr> ; getcharsearch().forward ? ',' : ';'
 nnoremap co <C-o>
 xnoremap <C-o> <ESC>:let b:ByteOffset=GetByteOffset()<CR>`<:if(b:ByteOffset<=GetByteOffset())<BAR>let b:VisCmd=""<BAR>else<BAR>let b:VisCmd="o"<BAR>endif<CR>:exe "normal gv".b:VisCmd<CR>
-nnoremap ü <C-w>
-tnoremap ü <C-w>
 " >>>
 " Shift Lines <<<
 nnoremap <S-Up>   kddpk
@@ -1605,7 +2022,8 @@ nnoremap mm g`Mzz
 " >>>
 " Registers <<<
 nnoremap cr :call ChangeRegType(v:register)<CR>
-nnoremap äs :call setreg('"', trim(getreg('"')))<CR>
+nnoremap cR :call ClearRegisters()<CR>
+" nnoremap äs :call setreg('"', trim(getreg('"')))<CR> TODO find better mapping
 inoremap ü <C-r>
 cnoremap ü <C-r>
 nnoremap Ü :EditReg<SPACE>
@@ -1631,105 +2049,123 @@ inoremap äf <C-x><C-f>
 " vim commandline
 inoremap äv <C-x><C-v>
 " spelling suggestions
+" äs is used for ShowAvailableSnips()
 inoremap är <C-x><C-s>
 " tags
 inoremap ät <C-x><C-]>
 " user defined
-inoremap äu <C-x><C-u>
-inoremap <C-SPACE> <C-x><C-u>
+let g:UserCompletionFunc=0
+" inoremap äu <C-x><C-u>
+" inoremap <C-SPACE> <C-x><C-u>
+inoremap äw <C-o>:let g:UserCompletionFunc=0<CR><C-x><C-u>
+inoremap äz <C-o>:let g:UserCompletionFunc=1<CR><C-x><C-u>
+inoremap äe <C-o>:let g:UserCompletionFunc=2<CR><C-x><C-u>
+inoremap äE <C-o>:let g:UserCompletionFunc=3<CR><C-x><C-u>
+
+inoremap äT <C-R>=InsertTimeStamp()<CR>
 " omni completion
 inoremap äo <C-x><C-o>
-inoremap <S-SPACE> <C-x><C-o>
-
-" add date/time
-" äj 2019-08-21
-" äh 2019-08-21T14:38
-" äJ 21. August 2019
-" äH 14:38
-inoremap äj <C-R>=strftime("%Y-%m-%d")<CR>
-inoremap äh <C-R>=strftime("%Y-%m-%dT%H:%M")<CR>
-inoremap äJ <C-R>=strftime("%d. %B %Y")<CR>
-inoremap äH <C-R>=strftime("%H:%M")<CR>
+" inoremap <S-SPACE> <C-x><C-o>
 " >>>
 " Cycle Settings <<<
 " nnoremap +a
+" nnoremap -a
+" nnoremap äa :call SetAlignCtrl()<CR>
 nnoremap +b :silent call CycleBase()<CR>
-nnoremap +c :ColorHEX<CR>
+" nnoremap -b
+" nnoremap +c :ColorHEX<CR> TODO is not a cycle
+" nnoremap -c
 " nnoremap +d
+" nnoremap -d
 " nnoremap +e
-nnoremap +f :call CycleFontType()<CR>
+" nnoremap -e
+nnoremap +f :call CycleFontType(+1)<CR>
+nnoremap -f :call CycleFontType(-1)<CR>
 " nnoremap +g
-nnoremap +h :call CycleColorscheme()<CR>
+" nnoremap -g
+nnoremap +h :call CycleColorscheme(+1)<CR>
+nnoremap -h :call CycleColorscheme(-1)<CR>
 " nnoremap +i
+" nnoremap -i
 " nnoremap +j
-nnoremap +k :if &keywordprg == ":help" <BAR> set keywordprg=man <BAR> echo "keywordprg=man" <BAR> else <BAR> set keywordprg=:help <BAR> echo "keywordprg=:help" <BAR> endif <CR>
+" nnoremap -j
+nnoremap +k :if &keywordprg == ":help" <BAR> set keywordprg=man <BAR> else <BAR> set keywordprg=:help <BAR> endif <BAR> set keywordprg?<CR>
+nnoremap -k :if &keywordprg == ":help" <BAR> set keywordprg=man <BAR> else <BAR> set keywordprg=:help <BAR> endif <BAR> set keywordprg?<CR>
 " nnoremap +l
+" nnoremap -l
 " nnoremap +m
+" nnoremap -m
 nnoremap +n :call CycleNotation()<CR>
+" nnoremap -n
 " nnoremap +o
+" nnoremap -o
 " nnoremap +p
+" nnoremap -p
 " nnoremap +q
-nnoremap +r :call CycleSpellLang()<CR>
-nnoremap +s :call CycleFontSize()<CR>
-" nnoremap +s
+" nnoremap -q
+nnoremap +r :call CycleSpellLang(+1)<CR>
+nnoremap -r :call CycleSpellLang(-1)<CR>
+nnoremap +s :call CycleFontSize(+1)<CR>
+nnoremap -s :call CycleFontSize(-1)<CR>
 " nnoremap +t
+" nnoremap -t
 " nnoremap +u
+" nnoremap -u
 " nnoremap +v
-nnoremap +w :call CycleTextWidth()<CR>
+" nnoremap -v
+nnoremap +w :call CycleTextWidth(+1)<CR>
+nnoremap -w :call CycleTextWidth(-1)<CR>
 " nnoremap +x
+" nnoremap -x
 " nnoremap +y
+" nnoremap -y
 " nnoremap +z
-" nnoremap +ä
-" nnoremap +ö
-" nnoremap +ü
-nnoremap +<TAB> :call CycleTabSpace()<CR>
+" nnoremap -z
+nnoremap +<TAB> :call CycleTabSpace(+1)<CR>
+nnoremap -<TAB> :call CycleTabSpace(-1)<CR>
 " >>>
 " Toggle Settings <<<
-" nnoremap -a
-nnoremap -b :set ballooneval! ballooneval?<CR>
-nnoremap -c :ColorToggle<CR>
-" nnoremap -d
-" nnoremap -e
-nnoremap -f :set fullscreen!<CR>
-" nnoremap -g
-nnoremap -h :if exists("g:syntax_on") <BAR> syntax off <BAR> else <BAR> syntax on <BAR> endif <CR>
-" nnoremap -i
-" nnoremap -j
-nnoremap -k :if &keywordprg == ":help" <BAR> set keywordprg=man <BAR> echo "keywordprg=man" <BAR> else <BAR> set keywordprg=:help <BAR> echo "keywordprg=:help" <BAR> endif <CR>
-nnoremap -l :setlocal list! list?<CR>
-nnoremap -m :set cursorcolumn! <BAR> set cursorline!<CR>
-nnoremap -n :set number! number?<CR>
-nnoremap -N :set relativenumber! relativenumber?<CR>
-" nnoremap -o
-" nnoremap -p
-" nnoremap -q
-nnoremap -r :set spell! spell?<CR>
-" nnoremap -s :sign unplace *<CR>
-nnoremap -s :set hls!<CR>
-" nnoremap -t
-nnoremap -u :sign unplace *<CR>
-nnoremap -v :set hidden! hidden?<CR>
-nnoremap -V :set modifiable! modifiable?<CR>
-nnoremap -w :set wrap! wrap?<CR>
-" nnoremap -x
-" nnoremap -y
-" nnoremap -z
-" nnoremap -ä
-" nnoremap -ö
-" nnoremap -ü
-nnoremap -<TAB> :set expandtab! expandtab?<CR>
+" nnoremap äa
+" nnoremap äb :set ballooneval! ballooneval?<CR>
+nnoremap äc :ColorToggle<CR>
+" nnoremap äd
+" nnoremap äe
+nnoremap äf :set fullscreen!<CR>
+" nnoremap äg
+nnoremap äh :if exists("g:syntax_on") <BAR> syntax off <BAR> else <BAR> syntax on <BAR> endif <CR>
+" nnoremap äi
+" nnoremap äj
+nnoremap äk :if &keywordprg == ":help" <BAR> set keywordprg=man <BAR> else <BAR> set keywordprg=:help <BAR> endif <BAR> set keywordprg?<CR>
+nnoremap äl :setlocal list! list?<CR>
+nnoremap äm :set cursorcolumn! <BAR> set cursorline!<CR>
+nnoremap än :set number! number?<CR>
+nnoremap äN :set relativenumber! relativenumber?<CR>
+" nnoremap äo
+nnoremap äp :set paste! paste?<CR>
+" nnoremap äq
+nnoremap är :set spell! spell?<CR>
+nnoremap äs :set hls!<CR>
+" nnoremap ät
+" nnoremap äu :sign unplace *<CR>
+nnoremap äv :set hidden! hidden?<CR>
+nnoremap äV :set modifiable! modifiable?<CR>
+nnoremap äw :set wrap! wrap?<CR>
+" nnoremap äx
+" nnoremap äy
+" nnoremap äz
+nnoremap ä<TAB> :set expandtab! expandtab?<CR>
 " >>>
 " Text Objects <<<
 " Visual Block <<<
 vnoremap ab :<C-U>call VisualBlock(1,',')<CR>
 vnoremap ib :<C-U>call VisualBlock(0,',')<CR>
-onoremap ab :normal ab<CR>
-onoremap ib :normal ib<CR>
+onoremap ab :normal vab<CR>
+onoremap ib :normal vib<CR>
 
 vnoremap aB :<C-U>call VisualBlock(1,'')<CR>
 vnoremap iB :<C-U>call VisualBlock(0,'')<CR>
-onoremap aB :normal aB<CR>
-onoremap iB :normal iB<CR>
+onoremap aB :normal vaB<CR>
+onoremap iB :normal viB<CR>
 " >>>
 " Indent Level <<<
 vnoremap <silent>ai :<C-U>call IndTxtObj(0, 0)<CR>
@@ -1743,13 +2179,14 @@ onoremap aI :normal VaI<CR>
 onoremap iI :normal ViI<CR>
 " >>>
 " Folding <<<
-vnoremap af :<C-U>silent! normal! [zV]z<CR>
-vnoremap if :<C-U>silent! normal! [zjV]zk<CR>
-onoremap af :normal Vaf<CR>
-onoremap if :normal Vif<CR>
+vnoremap az :<C-U>silent! normal! [zV]z<CR>
+vnoremap iz :<C-U>silent! normal! [zjV]zk<CR>
+onoremap az :normal Vaf<CR>
+onoremap iz :normal Vif<CR>
 " >>>
 " >>>
 " Misc <<<
+nnoremap gA :call GetHighlightGroup()<CR>
 nnoremap gG ggVG
 nnoremap g. @:
 nnoremap gp '[v']
@@ -1782,15 +2219,25 @@ nnoremap <S-CR> o<ESC>0D
 nnoremap g<CR> r<CR>kddpk==
 nnoremap <C-CR> i<CR><ESC>
 nnoremap g<C-CR> i<CR><ESC>kddpk==
-inoremap ö <ESC>
-cnoremap ö <ESC>
+nnoremap ü <C-w>
+tnoremap ü <C-w>
+" nnoremap <C-w>ü :helpclose<CR> TODO preferred solution
+nnoremap üü :helpclose<CR>
+nnoremap üä :vertical rightbelow terminal<CR>
+inoremap ö <C-c>
+cnoremap ö <C-c>
 inoremap Ö <C-v>
-cnoremap Ö <C-v>
+" cnoremap Ö <C-v> ???? what the heck ????
+" s-tab gets set by snipmate
+inoremap <S-TAB> <C-v><TAB>
 vnoremap <expr> <C-u> mode() ==? "\<C-v>" ? ':Left<CR>'   : ':left<CR>'
 vnoremap <expr> <C-n> mode() ==? "\<C-v>" ? ':Center<CR>' : ':center<CR>'
 vnoremap <expr> <C-i> mode() ==? "\<C-v>" ? ':Right<CR>'  : ':right<CR>'
 " >>>
 " UNDER DEVELOPMENT <<<
+nnoremap yO :call setreg('o', [])<CR>
+nnoremap yo "Oyy
+" nnoremap <expr> <CR> 'm`' . v:count1 . "GO<ESC>0D``"
 " nnoremap öL :call LaTeXMenu("viw")<CR>
 " xnoremap öL :call LaTeXMenu("gv")<CR>
 "
@@ -1874,7 +2321,7 @@ if has("win32")
 
       set titlestring=%F
 
-      colorscheme molokai
+      colorscheme gruvbox
 
 	else
 
@@ -1898,7 +2345,11 @@ if has("macunix")
    if has("gui_running")
 
       set guioptions+=c
-      colorscheme material
+
+      set background=dark
+      let g:gruvbox_italics=0
+      colorscheme gruvbox
+      " colorscheme monokai
 
       " hi CursorLine guifg=#232526 guibg=#F92672
 
@@ -1909,7 +2360,10 @@ if has("macunix")
 
    else
 
-      colorscheme default
+      set background=dark
+      let g:gruvbox_italics=0
+      colorscheme gruvbox
+      " colorscheme default
 
    endif
 
@@ -1927,7 +2381,7 @@ if has("win32unix")
 
    set directory=/tmp
 
-   colorscheme jellybeans
+   colorscheme gruvbox
 
    if has("gui_running")
 
@@ -1959,59 +2413,99 @@ if has("gui_running")
 
    exe "set guifont=".s:myFontTypeList[s:myFontType].":h".s:myFontSizeList[s:myFontSize]
 
-   " hi CursorLine guifg=#232526 guibg=#F92672
+   " hi CursorLine   guifg=white guibg=#2b3f4a
+   " hi CursorColumn guifg=white guibg=#2b3f4a
+   " hi ColorColumn  guifg=#232526 guibg=#F92672
+   
    "hi MyBooleanTrue  guifg=green
    "hi MyBooleanFalse guifg=red
    "syn keyword MyBooleanTrue  yes on true enable high contained
    "syn keyword MyBooleanFalse no off false disable low contained
 
-   hi red guifg=#F92672 guibg=#232526 gui=bold
-   hi grn guifg=#A6E22E guibg=#232526 gui=bold
-   hi org guifg=#FD971F guibg=#232526 gui=bold
-   hi blu guifg=#66D9EF guibg=#232526 gui=bold
-   hi ppl guifg=#AE81FF guibg=#232526 gui=bold
-   hi ylw guifg=#FFE345 guibg=#232526 gui=bold
-   hi wht guifg=#F8F8F0 guibg=#232526 gui=NONE
+   " hi red guifg=#F92672 guibg=#232526 gui=bold
+   " hi grn guifg=#A6E22E guibg=#232526 gui=bold
+   " hi org guifg=#FD971F guibg=#232526 gui=bold
+   " hi blu guifg=#66D9EF guibg=#232526 gui=bold
+   " hi ppl guifg=#AE81FF guibg=#232526 gui=bold
+   " hi ylw guifg=#FFE345 guibg=#232526 gui=bold
+   " hi wht guifg=#F8F8F0 guibg=#232526 gui=NONE
 
-   hi Match0 guifg=White guibg=grey62
-   hi Match1 guifg=White guibg=DarkOrchid4
-   hi Match2 guifg=Black guibg=SkyBlue        gui=bold
-   hi Match3 guifg=Black guibg=OliveDrab2     gui=bold
-   hi Match4 guifg=Black guibg=coral1         gui=bold
-   hi Match5 guifg=Black guibg=plum           gui=bold
-   hi Match6 guifg=Black guibg=orange         gui=bold
-   hi Match7 guifg=White guibg=DeepSkyBlue4
-   hi Match8 guifg=White guibg=DarkOliveGreen
-   hi Match9 guifg=White guibg=firebrick4
+   " hi red guifg=#fb4934 guibg=#232526 gui=bold
+   " hi grn guifg=#b8bb26 guibg=#232526 gui=bold
+   " hi org guifg=#d79921 guibg=#232526 gui=bold
+   " hi blu guifg=#458588 guibg=#232526 gui=bold
+   " hi ppl guifg=#b16286 guibg=#232526 gui=bold
+   " hi ylw guifg=#fabd2f guibg=#232526 gui=bold
+   " hi wht guifg=#ebdbb2 guibg=#232526 gui=NONE
+
+
+   " hi Match0 guifg=White guibg=grey62
+   " hi Match1 guifg=White guibg=DarkOrchid4
+   " hi Match2 guifg=Black guibg=SkyBlue        gui=bold
+   " hi Match3 guifg=Black guibg=OliveDrab2     gui=bold
+   " hi Match4 guifg=Black guibg=coral1         gui=bold
+   " hi Match5 guifg=Black guibg=plum           gui=bold
+   " hi Match6 guifg=Black guibg=orange         gui=bold
+   " hi Match7 guifg=White guibg=DeepSkyBlue4
+   " hi Match8 guifg=White guibg=DarkOliveGreen
+   " hi Match9 guifg=White guibg=firebrick4
 
 else
 
    set ttyfast
 
-   hi red ctermfg=167 ctermbg=236 cterm=bold
-   hi grn ctermfg=143 ctermbg=236 cterm=bold
-   hi org ctermfg=173 ctermbg=236 cterm=bold
-   hi blu ctermfg=110 ctermbg=236 cterm=bold
-   hi ppl ctermfg=139 ctermbg=236 cterm=bold
-   hi ylw ctermfg=144 ctermbg=236 cterm=bold
-   hi wht ctermfg=15  ctermbg=236 cterm=NONE
+   " hi red ctermfg=167 ctermbg=236 cterm=bold
+   " hi grn ctermfg=143 ctermbg=236 cterm=bold
+   " hi org ctermfg=173 ctermbg=236 cterm=bold
+   " hi blu ctermfg=110 ctermbg=236 cterm=bold
+   " hi ppl ctermfg=139 ctermbg=236 cterm=bold
+   " hi ylw ctermfg=144 ctermbg=236 cterm=bold
+   " hi wht ctermfg=15  ctermbg=236 cterm=NONE
 
-   hi Match0 ctermfg=White ctermbg=1
-   hi Match1 ctermfg=White ctermbg=2
-   hi Match2 ctermfg=Black ctermbg=3
-   hi Match3 ctermfg=Black ctermbg=4
-   hi Match4 ctermfg=Black ctermbg=5
-   hi Match5 ctermfg=Black ctermbg=6
-   hi Match6 ctermfg=Black ctermbg=7
-   hi Match7 ctermfg=White ctermbg=8
-   hi Match8 ctermfg=White ctermbg=9
-   hi Match9 ctermfg=White ctermbg=10
+   " hi Match0 ctermfg=White ctermbg=1
+   " hi Match1 ctermfg=White ctermbg=2
+   " hi Match2 ctermfg=Black ctermbg=3
+   " hi Match3 ctermfg=Black ctermbg=4
+   " hi Match4 ctermfg=Black ctermbg=5
+   " hi Match5 ctermfg=Black ctermbg=6
+   " hi Match6 ctermfg=Black ctermbg=7
+   " hi Match7 ctermfg=White ctermbg=8
+   " hi Match8 ctermfg=White ctermbg=9
+   " hi Match9 ctermfg=White ctermbg=10
 
 endif " >>>
 
-set statusline=%#org#CD=%#wht#%{getcwd()}%=%#ylw#SESSION=%#wht#%{GetFileName(v:this_session)}%#red#\ PERM=%#wht#%{getfperm(expand('%'))}\ %#red#FORMAT=%#wht#%{&ff}\ %#red#TYPE=%#wht#%Y\ %#ppl#SPELL=%#wht#%{&spelllang}\ %#grn#LINE=%#wht#%l/%L(%p%%)\ %#grn#COL=%#wht#%v\ %#grn#BYTE=%#wht#%o\ %#blu#DEC=%#wht#\%b\ %#blu#HEX=%#wht#\%B\ 
-" set statusline=%#org#Clip=%#wht#%{ShortenString(getreg('\"'),30,'r')}%=%#red#\ PERM=%#wht#%{getfperm(expand('%'))}\ %#red#FORMAT=%#wht#%{&ff}\ %#red#TYPE=%#wht#%Y\ \ %#ppl#SPELL=%#wht#%{&spelllang}\ \ %#grn#LINE=%#wht#%l/%L(%p%%)\ %#grn#COL=%#wht#%v\ %#grn#BYTE=%#wht#%o\ \ %#blu#DEC=%#wht#\%b\ %#blu#HEX=%#wht#\%B\ 
+set statusline=%#SLOrg#CD=%#SLNrm#%{getcwd()}%=\ 
+set statusline+=%#SLYlw#SESSION=%#SLNrm#%{GetFileName(v:this_session)}\ 
+set statusline+=%#SLRed#\ PERM=%#SLNrm#%{getfperm(expand('%'))}\ 
+set statusline+=%#SLRed#FORMAT=%#SLNrm#%{&ff}\ 
+set statusline+=%#SLRed#TYPE=%#SLNrm#%Y\ 
+set statusline+=%#SLPpl#SPELL=%#SLNrm#%{&spelllang}\ 
+set statusline+=%#SLGrn#LINE=%#SLNrm#%l/%L(%p%%)\ 
+set statusline+=%#SLGrn#COL=%#SLNrm#%v\ 
+set statusline+=%#SLGrn#BYTE=%#SLNrm#%o\ 
+set statusline+=%#SLBlu#XTAB=%#SLNrm#%{&expandtab}\ 
 
+" set statusline=%#org#CD=%#wht#%{getcwd()}%=%#ylw#SESSION=%#wht#%{GetFileName(v:this_session)}%#red#\ PERM=%#wht#%{getfperm(expand('%'))}\ %#red#FORMAT=%#wht#%{&ff}\ %#red#TYPE=%#wht#%Y\ %#ppl#SPELL=%#wht#%{&spelllang}\ %#grn#LINE=%#wht#%l/%L(%p%%)\ %#grn#COL=%#wht#%v\ %#grn#BYTE=%#wht#%o\ %#blu#DEC=%#wht#\%b\ %#blu#HEX=%#wht#\%B\ 
+" set statusline=%#org#Clip=%#wht#%{ShortenString(getreg('\"'),30,'r')}%=%#red#\ PERM=%#wht#%{getfperm(expand('%'))}\ %#red#FORMAT=%#wht#%{&ff}\ %#red#TYPE=%#wht#%Y\ \ %#ppl#SPELL=%#wht#%{&spelllang}\ \ %#grn#LINE=%#wht#%l/%L(%p%%)\ %#grn#COL=%#wht#%v\ %#grn#BYTE=%#wht#%o\ \ %#blu#DEC=%#wht#\%b\ %#blu#HEX=%#wht#\%B\ 
 " >>>
+
+"                 | cycle up/down | confirm menu | popup | panel
+" colorschemes    |     x         |       x      |   x   |
+" notation        |     x         |       x      |   x   | 
+" font type       |     x         |       x      |   x   |   
+" font size       |     x         |       x      |   x   | 
+" base            |     x         |       x      |   x   | 
+" spellcheck lang |     x         |       x      |   x   |
+" tabspace        |     x         |       x      |   x   | 
+" textwidth       |     x         |       x      |   x   | 
+" change reg type |     x         |       x      |   x   | 
+" makemenu        |               |       x      |   x   | 
+" align ctrl      |               |       x      |   x   | 
+" utils menu      |               |              |   x   | 
+" buffers         |               |              |   x   | x
+" sessions        |               |              |   x   | x
+" files           |               |              |   x   | x
+" tags            |               |              |   x   | x
 
 " vim: fdm=marker fmr=<<<,>>>
