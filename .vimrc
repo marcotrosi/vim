@@ -1515,6 +1515,22 @@ function! RunScript() abort
    " run script
    call term_sendkeys(l:TermBufNr, l:Interpreters[l:FileExt] .. " " .. l:FilePath .."\n") " use \r on macos
 endfunction " >>>
+" highlight tags <<<
+" so $VIMRUNTIME/syntax/hitest.vim
+function! HighlightTags()
+   " syntax clear MyFunction
+   " syntax clear MyType
+   highlight link MyFunction Function
+   highlight link MyType Type
+   let l:TagList = taglist(".")
+   for t in l:TagList
+      if t['kind'] == 'function'
+         exec "syntax keyword MyFunction " .. t['name']
+      elseif t['kind'] == 'struct'
+         exec "syntax keyword MyType " .. t['name']
+      endif
+   endfor
+endfunction " >>>
 " >>>
 " >>>
 
@@ -1707,7 +1723,7 @@ set errorformat=%f\ %l\ %m
 set errorformat+=%f:%l:%c:\ %m
 set errorformat+=%f
 set errorformat+=luac:\ %f:%l:\ %m
-set fillchars=vert:╏,fold:━
+set fillchars=vert:│,fold:─
 set foldmarker=<<<,>>>
 set foldmethod=marker
 set formatoptions=jlqr
@@ -1718,6 +1734,7 @@ set laststatus=2
 set listchars=eol:↲,tab:↦\ ,nbsp:␣,extends:…,trail:⋅
 set mousemodel=popup_setpos
 set nrformats=bin,hex
+set pastetoggle=ä<SPACE>
 set path=.,,** " use :checkpath
 set sessionoptions=buffers,curdir
 set shortmess=fIlmnxtToO
@@ -1771,6 +1788,7 @@ augroup VIMRC
    autocmd!
 
    autocmd BufEnter *.c,*.h let C='//' | let g:FunctionPattern_s = '\s\(\w\+\)(.\{-})\s*$'
+   "autocmd BufEnter *.c,*.h call HighlightTags()
    autocmd BufEnter *.lua let C='--' | let g:FunctionPattern_s = '\sfunction\s\+\(\w\+\)'
    "autocmd FileType lua setlocal iskeyword+=:
    autocmd BufEnter *.tex let C='%'
@@ -2027,6 +2045,8 @@ nnoremap cR :call ClearRegisters()<CR>
 inoremap ü <C-r>
 cnoremap ü <C-r>
 nnoremap Ü :EditReg<SPACE>
+nnoremap cO :call setreg('o', [])<CR>
+nnoremap yo "Oyy
 " >>>
 " Completion <<<
 cnoremap <C-k> <UP>
@@ -2235,8 +2255,7 @@ vnoremap <expr> <C-n> mode() ==? "\<C-v>" ? ':Center<CR>' : ':center<CR>'
 vnoremap <expr> <C-i> mode() ==? "\<C-v>" ? ':Right<CR>'  : ':right<CR>'
 " >>>
 " UNDER DEVELOPMENT <<<
-nnoremap yO :call setreg('o', [])<CR>
-nnoremap yo "Oyy
+" nnoremap <nowait> \r :Review<CR>
 " nnoremap <expr> <CR> 'm`' . v:count1 . "GO<ESC>0D``"
 " nnoremap öL :call LaTeXMenu("viw")<CR>
 " xnoremap öL :call LaTeXMenu("gv")<CR>
