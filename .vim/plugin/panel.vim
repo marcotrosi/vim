@@ -45,7 +45,7 @@ function! Panel(tool) " <<<
 
       call cursor(l:Data[2], 1)
 
-      setlocal noshowcmd
+      " setlocal noshowcmd
       setlocal buftype=nofile
       setlocal bufhidden=wipe
       setlocal noswapfile

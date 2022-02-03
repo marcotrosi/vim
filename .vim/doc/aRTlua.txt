@@ -1,4 +1,4 @@
-*aRTlua.txt*  For LUA version 5.1.4.  Last change: 2013 Jun 03
+*aRTlua.txt*  For Lua version 5.1.4  Last change: 2013 Jun 03
 
 
 		  VIM REFERENCE MANUAL    by Marco Trosi

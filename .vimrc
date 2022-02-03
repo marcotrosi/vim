@@ -64,7 +64,7 @@ endf
 function! GetHighlightGroup()
    let l:s = synID(line('.'), col('.'), 1)                                       
    echo synIDattr(l:s, 'name') . ' -> ' . synIDattr(synIDtrans(l:s), 'name')
-  endfunction " >>>
+endfunction " >>>
 
 " cycle notation functions <<<
 " general workflow <<<
@@ -258,8 +258,12 @@ function! CycleTextWidth(direction)
    if g:TextWidth == 0
       let g:TextWidth = 80
    elseif g:TextWidth == 80
+      let g:TextWidth = 100
+   elseif g:TextWidth == 100
       let g:TextWidth = 120
    elseif g:TextWidth == 120
+      let g:TextWidth = 140
+   elseif g:TextWidth == 140
       let g:TextWidth = 180
    else
       let g:TextWidth = 0
@@ -1013,6 +1017,13 @@ function! Sum(numbers)
    return eval(join(a:numbers, '+'))
 endfunction " >>>
 
+" eval equation <<<
+function! EvalEquation()
+   let l:Line = getline('.')
+   let l:Equation = substitute(l:Line, '.*=', '', '')
+   call setline('.', l:Line .. " = " .. string(eval(l:Equation)))
+endfunction " >>>
+ 
 " yank path <<<
 function! YankPath()
    let l:Path      = expand('%:p')
@@ -1081,9 +1092,25 @@ function! ClearRegisters()
    endfor
 endfunction " >>>
 
+" asciify <<<
+function! Asciify() range abort
+
+   let Chars = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
+   let SpecialChars=[{'i':'Ꜳ', 'o':'AA'}, {'i':'Æ', 'o':'AE'}, {'i':'Ǽ', 'o':'AE'}, {'i':'Ǣ', 'o':'AE'}, {'i':'Ꜵ', 'o':'AO'}, {'i':'Ꜷ', 'o':'AU'}, {'i':'Ꜹ', 'o':'AV'}, {'i':'Ꜻ', 'o':'AV'}, {'i':'Ꜽ', 'o':'AY'}, {'i':'Ƃ', 'o':'B'}, {'i':'ǲ', 'o':'D'}, {'i':'ǅ', 'o':'D'}, {'i':'Ƌ', 'o':'D'}, {'i':'Ǳ', 'o':'DZ'}, {'i':'Ǆ', 'o':'DZ'}, {'i':'Ꝫ', 'o':'ET'}, {'i':'Ꝺ', 'o':'D'}, {'i':'Ꝼ', 'o':'F'}, {'i':'Ᵹ', 'o':'G'}, {'i':'Ꞃ', 'o':'R'}, {'i':'Ꞅ', 'o':'S'}, {'i':'Ꞇ', 'o':'T'}, {'i':'Ꝭ', 'o':'IS'}, {'i':'Ꝃ', 'o':'K'}, {'i':'Ꝅ', 'o':'K'}, {'i':'Ꝉ', 'o':'L'}, {'i':'Ɫ', 'o':'L'}, {'i':'ǈ', 'o':'L'}, {'i':'Ǉ', 'o':'LJ'}, {'i':'Ɱ', 'o':'M'}, {'i':'Ɲ', 'o':'N'}, {'i':'Ƞ', 'o':'N'}, {'i':'ǋ', 'o':'N'}, {'i':'Ǌ', 'o':'NJ'}, {'i':'Ꝋ', 'o':'O'}, {'i':'Ꝍ', 'o':'O'}, {'i':'Ƣ', 'o':'OI'}, {'i':'Ꝏ', 'o':'OO'}, {'i':'Ɛ', 'o':'E'}, {'i':'Ɔ', 'o':'O'}, {'i':'Ȣ', 'o':'OU'}, {'i':'Ꝓ', 'o':'P'}, {'i':'Ꝕ', 'o':'P'}, {'i':'Ꝑ', 'o':'P'}, {'i':'Ꝙ', 'o':'Q'}, {'i':'Ꝗ', 'o':'Q'}, {'i':'Ꜿ', 'o':'C'}, {'i':'Ǝ', 'o':'E'}, {'i':'Ɐ', 'o':'A'}, {'i':'Ꞁ', 'o':'L'}, {'i':'Ɯ', 'o':'M'}, {'i':'Ʌ', 'o':'V'}, {'i':'Ꜩ', 'o':'TZ'}, {'i':'Ꝟ', 'o':'V'}, {'i':'Ꝡ', 'o':'VY'}, {'i':'Ⱳ', 'o':'W'}, {'i':'Ỿ', 'o':'Y'}, {'i':'Ȥ', 'o':'Z'}, {'i':'Ĳ', 'o':'IJ'}, {'i':'Œ', 'o':'OE'}, {'i':'ᴀ', 'o':'A'}, {'i':'ᴁ', 'o':'AE'}, {'i':'ʙ', 'o':'B'}, {'i':'ᴃ', 'o':'B'}, {'i':'ᴄ', 'o':'C'}, {'i':'ᴅ', 'o':'D'}, {'i':'ᴇ', 'o':'E'}, {'i':'ꜰ', 'o':'F'}, {'i':'ɢ', 'o':'G'}, {'i':'ʛ', 'o':'G'}, {'i':'ʜ', 'o':'H'}, {'i':'ɪ', 'o':'I'}, {'i':'ʁ', 'o':'R'}, {'i':'ᴊ', 'o':'J'}, {'i':'ᴋ', 'o':'K'}, {'i':'ʟ', 'o':'L'}, {'i':'ᴌ', 'o':'L'}, {'i':'ᴍ', 'o':'M'}, {'i':'ɴ', 'o':'N'}, {'i':'ᴏ', 'o':'O'}, {'i':'ɶ', 'o':'OE'}, {'i':'ᴐ', 'o':'O'}, {'i':'ᴕ', 'o':'OU'}, {'i':'ᴘ', 'o':'P'}, {'i':'ʀ', 'o':'R'}, {'i':'ᴎ', 'o':'N'}, {'i':'ᴙ', 'o':'R'}, {'i':'ꜱ', 'o':'S'}, {'i':'ᴛ', 'o':'T'}, {'i':'ⱻ', 'o':'E'}, {'i':'ᴚ', 'o':'R'}, {'i':'ᴜ', 'o':'U'}, {'i':'ᴠ', 'o':'V'}, {'i':'ᴡ', 'o':'W'}, {'i':'ʏ', 'o':'Y'}, {'i':'ᴢ', 'o':'Z'}, {'i':'ꜳ', 'o':'aa'}, {'i':'æ', 'o':'ae'}, {'i':'ǽ', 'o':'ae'}, {'i':'ǣ', 'o':'ae'}, {'i':'ꜵ', 'o':'ao'}, {'i':'ꜷ', 'o':'au'}, {'i':'ꜹ', 'o':'av'}, {'i':'ꜻ', 'o':'av'}, {'i':'ꜽ', 'o':'ay'}, {'i':'ƃ', 'o':'b'}, {'i':'ɕ', 'o':'c'}, {'i':'ȡ', 'o':'d'}, {'i':'ɖ', 'o':'d'}, {'i':'ƌ', 'o':'d'}, {'i':'ı', 'o':'i'}, {'i':'ȷ', 'o':'j'}, {'i':'ɟ', 'o':'j'}, {'i':'ʄ', 'o':'j'}, {'i':'ǳ', 'o':'dz'}, {'i':'ǆ', 'o':'dz'}, {'i':'ⱸ', 'o':'e'}, {'i':'ꝫ', 'o':'et'}, {'i':'ɦ', 'o':'h'}, {'i':'ƕ', 'o':'hv'}, {'i':'ꝺ', 'o':'d'}, {'i':'ꝼ', 'o':'f'}, {'i':'ᵹ', 'o':'g'}, {'i':'ꞃ', 'o':'r'}, {'i':'ꞅ', 'o':'s'}, {'i':'ꞇ', 'o':'t'}, {'i':'ꝭ', 'o':'is'}, {'i':'ʝ', 'o':'j'}, {'i':'ꝃ', 'o':'k'}, {'i':'ꝅ', 'o':'k'}, {'i':'ɬ', 'o':'l'}, {'i':'ȴ', 'o':'l'}, {'i':'ꝉ', 'o':'l'}, {'i':'ɫ', 'o':'l'}, {'i':'ᶅ', 'o':'l'}, {'i':'ɭ', 'o':'l'}, {'i':'ǉ', 'o':'lj'}, {'i':'ſ', 'o':'s'}, {'i':'ẜ', 'o':'s'}, {'i':'ẛ', 'o':'s'}, {'i':'ẝ', 'o':'s'}, {'i':'ɱ', 'o':'m'}, {'i':'ᶆ', 'o':'m'}, {'i':'ȵ', 'o':'n'}, {'i':'ɲ', 'o':'n'}, {'i':'ƞ', 'o':'n'}, {'i':'ɳ', 'o':'n'}, {'i':'ǌ', 'o':'nj'}, {'i':'ꝋ', 'o':'o'}, {'i':'ꝍ', 'o':'o'}, {'i':'ⱺ', 'o':'o'}, {'i':'ƣ', 'o':'oi'}, {'i':'ꝏ', 'o':'oo'}, {'i':'ɛ', 'o':'e'}, {'i':'ᶓ', 'o':'e'}, {'i':'ɔ', 'o':'o'}, {'i':'ᶗ', 'o':'o'}, {'i':'ȣ', 'o':'ou'}, {'i':'ꝓ', 'o':'p'}, {'i':'ꝕ', 'o':'p'}, {'i':'ꝑ', 'o':'p'}, {'i':'ꝙ', 'o':'q'}, {'i':'ꝗ', 'o':'q'}, {'i':'ɾ', 'o':'r'}, {'i':'ɼ', 'o':'r'}, {'i':'ↄ', 'o':'c'}, {'i':'ꜿ', 'o':'c'}, {'i':'ɘ', 'o':'e'}, {'i':'ɿ', 'o':'r'}, {'i':'ʂ', 'o':'s'}, {'i':'ß', 'o':'ss'}, {'i':'ɡ', 'o':'g'}, {'i':'ᴑ', 'o':'o'}, {'i':'ᴓ', 'o':'o'}, {'i':'ᴝ', 'o':'u'}, {'i':'ȶ', 'o':'t'}, {'i':'ᵺ', 'o':'th'}, {'i':'ɐ', 'o':'a'}, {'i':'ᴂ', 'o':'ae'}, {'i':'ǝ', 'o':'e'}, {'i':'ᵷ', 'o':'g'}, {'i':'ɥ', 'o':'h'}, {'i':'ʮ', 'o':'h'}, {'i':'ʯ', 'o':'h'}, {'i':'ᴉ', 'o':'i'}, {'i':'ʞ', 'o':'k'}, {'i':'ꞁ', 'o':'l'}, {'i':'ɯ', 'o':'m'}, {'i':'ɰ', 'o':'m'}, {'i':'ᴔ', 'o':'oe'}, {'i':'ɹ', 'o':'r'}, {'i':'ɻ', 'o':'r'}, {'i':'ɺ', 'o':'r'}, {'i':'ⱹ', 'o':'r'}, {'i':'ʇ', 'o':'t'}, {'i':'ʌ', 'o':'v'}, {'i':'ʍ', 'o':'w'}, {'i':'ʎ', 'o':'y'}, {'i':'ꜩ', 'o':'tz'}, {'i':'ᵫ', 'o':'ue'}, {'i':'ꝸ', 'o':'um'}, {'i':'ⱴ', 'o':'v'}, {'i':'ꝟ', 'o':'v'}, {'i':'ⱱ', 'o':'v'}, {'i':'ꝡ', 'o':'vy'}, {'i':'ẃ', 'o':'w'}, {'i':'ŵ', 'o':'w'}, {'i':'ẅ', 'o':'w'}, {'i':'ẇ', 'o':'w'}, {'i':'ẉ', 'o':'w'}, {'i':'ẁ', 'o':'w'}, {'i':'ⱳ', 'o':'w'}, {'i':'ẘ', 'o':'w'}, {'i':'ẍ', 'o':'x'}, {'i':'ẋ', 'o':'x'}, {'i':'ᶍ', 'o':'x'}, {'i':'ý', 'o':'y'}, {'i':'ŷ', 'o':'y'}, {'i':'ÿ', 'o':'y'}, {'i':'ẏ', 'o':'y'}, {'i':'ỵ', 'o':'y'}, {'i':'ỳ', 'o':'y'}, {'i':'ƴ', 'o':'y'}, {'i':'ỷ', 'o':'y'}, {'i':'ỿ', 'o':'y'}, {'i':'ȳ', 'o':'y'}, {'i':'ẙ', 'o':'y'}, {'i':'ɏ', 'o':'y'}, {'i':'ỹ', 'o':'y'}, {'i':'ź', 'o':'z'}, {'i':'ž', 'o':'z'}, {'i':'ẑ', 'o':'z'}, {'i':'ʑ', 'o':'z'}, {'i':'ⱬ', 'o':'z'}, {'i':'ż', 'o':'z'}, {'i':'ẓ', 'o':'z'}, {'i':'ȥ', 'o':'z'}, {'i':'ẕ', 'o':'z'}, {'i':'ᵶ', 'o':'z'}, {'i':'ᶎ', 'o':'z'}, {'i':'ʐ', 'o':'z'}, {'i':'ƶ', 'o':'z'}, {'i':'ɀ', 'o':'z'}, {'i':'ﬀ', 'o':'ff'}, {'i':'ﬃ', 'o':'ffi'}, {'i':'ﬄ', 'o':'ffl'}, {'i':'ﬁ', 'o':'fi'}, {'i':'ﬂ', 'o':'fl'}, {'i':'ĳ', 'o':'ij'}, {'i':'œ', 'o':'oe'}, {'i':'ﬆ', 'o':'st'}, {'i':'ₐ', 'o':'a'}, {'i':'ₑ', 'o':'e'}, {'i':'ᵢ', 'o':'i'}, {'i':'ⱼ', 'o':'j'}, {'i':'ₒ', 'o':'o'}, {'i':'ᵣ', 'o':'r'}, {'i':'ᵤ', 'o':'u'}, {'i':'ᵥ', 'o':'v'}, {'i':'ₓ', 'o':'x'}]
+
+   for c in Chars
+      execute 'silent! ' .. a:firstline .. ',' .. a:lastline .. 's/[[=' .. c .. '=]]/' .. c .. '/g'
+   endfor
+
+   for c in SpecialChars
+      execute 'silent! ' .. a:firstline .. ',' .. a:lastline .. 's/' .. c.i .. '/' .. c.o .. '/g'
+   endfor
+
+endfunction " >>>
+
 " UNDER DEVELOPMENT <<<
 " get misspelled words <<<
-function! GetMisspelledWords()
+function! GetMisspelledWords1() " <<<
    let l:LineCnt  = 0
    let l:BufLines = getbufline('%', 1, '$')
    let l:BadWords = []
@@ -1100,9 +1127,47 @@ function! GetMisspelledWords()
             let l:End   = l:Match[2]
             let l:Check = spellbadword(l:Word)
             if l:Check[0] != ''
+               let l:Result = {}
+               let l:Result['word']     = l:Check[0]
+               let l:Result['type']     = l:Check[1]
+               let l:Result['bufname']  = bufname('%')
+               let l:Result['filename'] = expand('%:p')
+               let l:Result['bufnr']    = bufnr('%')
+               let l:Result['line']     = l:LineCnt
+               let l:Result['scol']     = l:Start+1
+               let l:Result['ecol']     = l:End
+               call add(l:BadWords, l:Result)
+            end
+            let l:Start = l:End
+         endif
+      endwhile
+   endfor
+   return l:BadWords
+endfunction " >>>
+
+function! GetMisspelledWords2() " <<<
+   let l:LineCnt  = 0
+   let l:BufLines = getbufline('%', 1, '$')
+   let l:BadWords = []
+   for line in l:BufLines
+      let l:Start=0
+      let l:LineCnt = l:LineCnt + 1
+      while v:true
+         let l:Match = matchstrpos(line,'\a\+',l:Start)
+         if l:Match[0] == ''
+            break
+         else
+            let l:Word  = l:Match[0]
+            let l:Start = l:Match[1]
+            let l:End   = l:Match[2]
+            call cursor(l:LineCnt, l:Start+1)
+            echo expand('<cword>')
+            let l:Check = spellbadword()
+            echo l:Check
+            echo l:Start
+            echo l:End
+            if l:Check[0] != ''
                call add(l:Check, l:LineCnt)
-               " call add(l:Check, l:Start)
-               " call add(l:Check, l:End-1)
                call add(l:Check, l:Start+1)
                call add(l:Check, l:End)
                call add(l:BadWords, l:Check)
@@ -1112,7 +1177,56 @@ function! GetMisspelledWords()
       endwhile
    endfor
    return l:BadWords
-endfunction
+endfunction " >>>
+
+function! GetMisspelledWords() abort " <<<
+   let l:LineCnt  = 0
+   let l:BufLines = getbufline('%', 1, '$')
+   let l:BadWords = []
+   for line in l:BufLines
+      let l:Start=0
+      let l:LineCnt = l:LineCnt + 1
+      while v:true
+         call cursor(l:LineCnt, l:Start+1)
+         let l:CursorPos = getpos('.')
+         if l:CursorPos[2] != l:Start+1
+            break
+         end
+         let l:Check = spellbadword()
+         if l:Check[0] != ''
+            let l:Result = {}
+            let l:Result['word']  = l:Check[0]
+            let l:Result['type']  = toupper(l:Check[1][0])
+            let l:Result['bufnr'] = bufnr('%')
+            let l:CursorPos       = getpos('.')
+            let l:Result['lnum']  = l:LineCnt
+            let l:Start           = l:CursorPos[2]
+            let l:Result['scol']  = l:Start
+            let l:End             = l:Start + strdisplaywidth(l:Check[0]) - 1
+            let l:Result['ecol']  = l:End
+            let l:Result['sugg']  = spellsuggest(l:Check[0], 1)[0]
+            call add(l:BadWords, l:Result)
+            let l:Start = l:End
+         else
+            break
+         end
+      endwhile
+   endfor
+   return l:BadWords
+endfunction " >>>
+
+function! QuickfixMisspelledWords() abort " <<<
+   let l:QFList = []
+   let l:Words = GetMisspelledWords()
+   for word in l:Words
+      call add(l:QFList, {'bufnr':word['bufnr'], 'lnum':word['lnum'], 'col':word['scol'], 'type':word['type'], 'text':word['word'] .. ' -> ' .. word['sugg']})
+   endfor
+   call setqflist(l:QFList)
+   copen
+endfunction " >>>
+
+nnoremap z, :call QuickfixMisspelledWords()<CR>
+nnoremap z; :cdo normal 1z=<CR>
 " >>>
 " Test Color <<<
 "let g:Color = 0
@@ -1531,6 +1645,67 @@ function! HighlightTags()
       endif
    endfor
 endfunction " >>>
+" diff registers <<<
+function DiffReg(regl, regr)
+   let l:Left = '/tmp/left.txt'
+   let l:Right = '/tmp/right.txt'
+   call writefile(getreg(a:regl, 1, 1), l:Left)
+   call writefile(getreg(a:regr, 1, 1), l:Right)
+   execute 'tabedit ' .. l:Right
+   execute 'diffsplit ' .. l:Left
+endfunction
+
+command! -nargs=* DiffReg call DiffReg(<f-args>)
+" >>>
+" git functions <<<
+" git get branch <<<
+function! GitGetBranch()
+   let l:branchName = system("git rev-parse --abbrev-ref HEAD 2>/dev/null | tr -d '\n'")
+   return l:branchName
+endfunction " >>>
+" >>>
+" edit old files <<<
+let s:OldFilesPre = '/tmp/o_pre.tmp'
+let s:OldFilesSel = '/tmp/o.tmp'
+let s:OldFilesCmd = '/Users/marcotrosi/.vim/bin/o.sh'
+
+function! EditOldFiles(j, s)
+   echom "edit callback"
+   wincmd p
+   if !filereadable(s:OldFilesSel) 
+      return
+   endif
+   for fname in readfile(s:OldFilesSel) 
+      silent execute ':e ' . substitute(fname,'^\d\+:\ ','','')
+   endfor
+endfunction
+
+function! OldFiles()
+   execute 'redir! > ' . s:OldFilesPre
+   silent oldfiles
+   redir END
+   let l:TermBufNum = term_start(s:OldFilesCmd, {'term_name':'old files', 'hidden':0, 'term_finish':'close', 'norestore':1, 'vertical':1, 'exit_cb':'EditOldFiles'})
+endfunction
+
+command! OldFiles call OldFiles()
+nnoremap <SPACE>o :OldFiles<CR>
+" >>>
+" yank search matches <<<
+function! YankSearchMatches(reg)
+  let l:SearchMatches = []
+  %s//\=len(add(l:SearchMatches, submatch(0)))/gne
+  let l:Register = empty(a:reg) ? '"' : a:reg
+  call setreg(l:Register, l:SearchMatches, "l")
+endfunction
+command! -register YankSearchMatches call YankSearchMatches(<q-reg>)
+">>>
+" eval digraph <<<
+function! EvalDigraph()
+   normal vhx
+   exec "normal a" .. getreg('"')
+endfunction
+inoremap <S-SPACE> <ESC>:call EvalDigraph()<CR>a
+" >>>
 " >>>
 " >>>
 
@@ -1545,6 +1720,8 @@ command! -nargs=* Grep call Grep('<args>')
 command! -nargs=* GrepBuffers call GrepBuffers('<args>')
 command! -nargs=* Find call Find('<args>')
 command! -range -nargs=0 Sum echo Sum(ExtractNumbersFromString(GetVisualSelection()))
+command! EvalEquation call EvalEquation()
+command! -range Asciify <line1>,<line2>call Asciify()
 command! -range=% -nargs=? -complete=file New silent <line1>,<line2>yank x | enew | put! x | $d_ | if(<q-args> != '') | silent write <args> | endif
 command! E silent! !explorer .
 command! F silent! !open .
@@ -1564,7 +1741,7 @@ else
    let s:PasteRegCmd     = '/Users/marcotrosi/.vim/bin/r.sh'
    let s:PasteRegTmp     = '/tmp/r.tmp'
    let s:PasteRegPreTmp  = '/tmp/r_pre.tmp'
-   let s:SelectCmd       = '/Users/marcotrosi/.vim/bin/b.sh'
+   let s:SelectBufCmd    = '/Users/marcotrosi/.vim/bin/b.sh'
    let s:SelectBufTmp    = '/tmp/b.tmp'
    let s:SelectBufPreTmp = '/tmp/b_pre.tmp'
 endif
@@ -1633,15 +1810,16 @@ function! SelectBuf()
    let l:Cmds = []
    let l:NumOfBuffers = bufnr('$')
    let l:Buffers = []
+   " let SelectedBuffer = ''
 
    function! SelectBufCallback(job, status) closure
 
       if filereadable(s:SelectBufTmp)
 
          call add(l:Cmds, 'wincmd p')
-         let l:Cmd = 'norm "' . readfile(s:SelectBufTmp, '', 1)[0][0]
+         let l:Cmd = 'b' . matchstr(readfile(s:SelectBufTmp, '', 1)[0], '^\d\+')
+         " let SelectedBuffer = matchstr(readfile(s:SelectBufTmp, '', 1)[0], '^\d\+')
          call add(l:Cmds, l:Cmd)
-
          for cmd in l:Cmds
             execute cmd
          endfor
@@ -1655,8 +1833,9 @@ function! SelectBuf()
    endwhile
    call writefile(l:Buffers, s:SelectBufPreTmp)
 
-   " let l:TermBufNum = term_start(s:SelectBufCmd, {'term_name':'select buffer', 'hidden':0, 'term_finish':'close', 'norestore':1, 'vertical':1, 'exit_cb':'SelectBufCallback'})
+   let l:TermBufNum = term_start(s:SelectBufCmd, {'term_name':'select buffer', 'hidden':0, 'term_finish':'close', 'norestore':1, 'vertical':1, 'exit_cb':'SelectBufCallback'})
    " let l:WinID = popup_create(l:TermBufNum, {'minwidth': 50, 'minheight': 20})
+   " execute "b"..SelectedBuffer
 endfunction
 " >>>
 
@@ -1698,12 +1877,15 @@ set showmode
 " set splitright
 set wildmenu
 set wrapscan
-set termguicolors
+" if environ()['SHELL'] != '/bin/bash'
+   set termguicolors
+" endif
 set title
 " set undofile
 " >>>
 
 " values <<<
+language en_US.UTF-8
 let g:TabSpace=3
 execute 'set tabstop='.g:TabSpace
 execute 'set softtabstop='.g:TabSpace
@@ -1717,12 +1899,12 @@ set complete=.,w,b,u
 " set completeopt=menu,longest,noinsert,noselect
 set completefunc=UserCompletion
 set dictionary=/usr/share/dict/words
-set directory=~/.vim/swapdir,/tmp
+set directory=~/.vim/swapdir//,/tmp//
 set encoding=utf-8
-set errorformat=%f\ %l\ %m
-set errorformat+=%f:%l:%c:\ %m
-set errorformat+=%f
+set errorformat=%f:%l:%c:\ %m
+set errorformat+=%f:%l:\ %m
 set errorformat+=luac:\ %f:%l:\ %m
+set errorformat+=%f\ %l\ %m
 set fillchars=vert:│,fold:─
 set foldmarker=<<<,>>>
 set foldmethod=marker
@@ -1755,8 +1937,10 @@ sign define O text=✔ texthl=grn
 " https://en.wikipedia.org/wiki/Box_Drawing_(Unicode_block)
 " https://en.wikipedia.org/wiki/Block_Elements
 " https://en.wikipedia.org/wiki/Geometric_Shapes
+hi red guifg=#F92672 guibg=#232526 ctermfg=167 ctermbg=236
 sign define A text=▶︎ texthl=red
 sign define B text=■ texthl=red
+sign define C text=▶︎ texthl=red
 " ◯ ◑ ●
 " ◐ ▲ ◆
 " →
@@ -1798,6 +1982,7 @@ augroup VIMRC
 
    autocmd BufEnter *.dox set filetype=c.doxygen
    autocmd BufEnter *.vba set filetype=vb
+   autocmd BufEnter *.gp  set filetype=gnuplot
 
    autocmd BufEnter *.py set noexpandtab
    autocmd BufLeave *.py set expandtab
@@ -1808,7 +1993,7 @@ augroup VIMRC
    autocmd VimLeavePre * call CleanUp()
    autocmd ColorScheme * call DefMatchColors() " TODO temporary til part of colorschemes
 
-   autocmd CmdwinEnter * map <buffer> <S-CR> <C-c><C-e> " don't execute but put cmd in commandline
+   autocmd CmdwinEnter * map <buffer> <S-CR> <C-c><C-e>
    autocmd FileType help nnoremap <buffer> q :helpclose<cr>
 augroup END
 " >>>
@@ -1852,13 +2037,13 @@ nnoremap -- <C-x>
 " nnoremap gt :tag<SPACE>
 nnoremap öt :call Panel('Tags')<CR>
 nnoremap öö g<C-]>zz
-nnoremap ää <C-t>zz
-nnoremap öä :call JumpToTest('')<CR>
-nnoremap öÄ :call JumpToTest(expand('<cword>'))<CR>
+nnoremap Ö <C-t>zz
+nnoremap ää :call JumpToTest('')<CR>
+nnoremap äÄ :call JumpToTest(expand('<cword>'))<CR>
 nnoremap öH :helptags ~/.vim/doc<CR>
-nnoremap <F10> :!ltags $(find . -name '*.lua') > .tags<CR>
-nnoremap <F11> :!cscope -b -c -R<CR>
-nnoremap <F12> :!ctags --langmap=c:.c.h -f .tags -R --tag-relative=yes --extras=+fq --fields=+znimsStK --c-kinds=+lpx --sort=yes<CR>
+nnoremap <F10> :silent !ltags $(find . -name '*.lua') > .tags<CR>
+nnoremap <F11> :silent !cscope -b -c -R<CR>
+nnoremap <F12> :silent !ctags --langmap=c:.c.h -f .tags -R --tag-relative=yes --extras=+fq --fields=+znimsStK --c-kinds=+lpx --sort=yes<CR>
 " >>>
 " Grep <<<
 " TODO: test with regex searches
@@ -1935,7 +2120,9 @@ nnoremap cp :%bd<BAR>let v:this_session=''<CR>
 " Spell <<<
 nnoremap ör ]szz
 nnoremap öR [szz
-" nnoremap är z=
+" nnoremap Z= 1z=
+" nnoremap äR <CR>1z=<C-w>p<down>
+" inoremap <C-l> <ESC>ms[s1z=`sa
 " >>>
 " Search <<<
 nnoremap n nzz
@@ -1957,6 +2144,7 @@ nnoremap <SPACE><C-S-SPACE> /\c\<\><left><left>
 " cnoremap <C-SPACE> <C-R><C-W>
 cnoremap äw <C-R><C-W>
 cnoremap äW <C-R><C-A>
+cnoremap äa <C-R><C-A>
 cnoremap äf <C-R><C-F>
 cnoremap äp <C-R><C-P>
 cnoremap äl <C-R><C-L>
@@ -1995,10 +2183,10 @@ nnoremap <silent> <Bslash>/ :let tmp=@/<BAR>s:\\:/:ge<BAR>let @/=tmp<BAR>noh<CR>
 nnoremap <silent> <Bslash><Bslash> :let tmp=@/<BAR>s:/:\\:ge<BAR>let @/=tmp<BAR>noh<CR>
 " >>>
 " Moving Cursor <<<
-inoremap <C-k> <Up>
-inoremap <C-j> <Down>
-inoremap <C-h> <Left>
-inoremap <C-l> <Right>
+" inoremap <C-k> <Up>
+" inoremap <C-j> <Down>
+" inoremap <C-h> <Left>
+" inoremap <C-l> <Right>
 snoremap <C-k> <Up>
 snoremap <C-j> <Down>
 snoremap <C-h> <Left>
@@ -2018,10 +2206,10 @@ nnoremap co <C-o>
 xnoremap <C-o> <ESC>:let b:ByteOffset=GetByteOffset()<CR>`<:if(b:ByteOffset<=GetByteOffset())<BAR>let b:VisCmd=""<BAR>else<BAR>let b:VisCmd="o"<BAR>endif<CR>:exe "normal gv".b:VisCmd<CR>
 " >>>
 " Shift Lines <<<
-nnoremap <S-Up>   kddpk
-nnoremap <S-Down> ddp
-xnoremap <S-Up>   xkP'[V']
-xnoremap <S-Down> xp'[V']
+nnoremap <S-Up>   :m-2<CR>==
+nnoremap <S-Down> :m+<CR>==
+xnoremap <S-Up>   :m-2<CR>gv=gv
+xnoremap <S-Down> :m'>+<CR>gv=gv
 " >>>
 " Indent <<<
 xnoremap <C-l> >gv
@@ -2031,7 +2219,8 @@ nnoremap g= gg=Gg``zz
 " Fold <<<
 nnoremap zp vip<ESC>'<A =C<CR> <<<<ESC>'>A =C<CR> >>><ESC>
 xnoremap zp <ESC>'<A =C<CR> <<<<ESC>'>A =C<CR> >>><ESC>
-nnoremap zP o=C<CR> vim: fmr=<<<,>>> fdm=marker<ESC>
+nnoremap zP Go=C<CR> vim: fmr=<<<,>>> fdm=marker<ESC>
+" nnoremap zP Go<ESC>:call setline('.', printf(&commentstring, ' vim: fmr=<<<,>>> fdm=marker '))<CR>
 " >>>
 " Marks <<<
 nnoremap mn ]`zz
@@ -2060,6 +2249,8 @@ inoremap <expr> <CR>    pumvisible() ? "\<C-y>\<ESC>" : "\<CR>"
 inoremap äl <C-x><C-l>
 " dictionary
 inoremap äd <C-x><C-k>
+" thesaurus
+inoremap ät <C-x><C-t>
 " current file
 inoremap än <C-x><C-n>
 " included files
@@ -2072,7 +2263,7 @@ inoremap äv <C-x><C-v>
 " äs is used for ShowAvailableSnips()
 inoremap är <C-x><C-s>
 " tags
-inoremap ät <C-x><C-]>
+inoremap äg <C-x><C-]>
 " user defined
 let g:UserCompletionFunc=0
 " inoremap äu <C-x><C-u>
@@ -2090,7 +2281,6 @@ inoremap äo <C-x><C-o>
 " Cycle Settings <<<
 " nnoremap +a
 " nnoremap -a
-" nnoremap äa :call SetAlignCtrl()<CR>
 nnoremap +b :silent call CycleBase()<CR>
 " nnoremap -b
 " nnoremap +c :ColorHEX<CR> TODO is not a cycle
@@ -2145,7 +2335,7 @@ nnoremap +<TAB> :call CycleTabSpace(+1)<CR>
 nnoremap -<TAB> :call CycleTabSpace(-1)<CR>
 " >>>
 " Toggle Settings <<<
-" nnoremap äa
+nnoremap äa :call SetAlignCtrl()<CR>
 " nnoremap äb :set ballooneval! ballooneval?<CR>
 nnoremap äc :ColorToggle<CR>
 " nnoremap äd
@@ -2157,7 +2347,7 @@ nnoremap äh :if exists("g:syntax_on") <BAR> syntax off <BAR> else <BAR> syntax 
 " nnoremap äj
 nnoremap äk :if &keywordprg == ":help" <BAR> set keywordprg=man <BAR> else <BAR> set keywordprg=:help <BAR> endif <BAR> set keywordprg?<CR>
 nnoremap äl :setlocal list! list?<CR>
-nnoremap äm :set cursorcolumn! <BAR> set cursorline!<CR>
+nnoremap äm :set cursorcolumn! cursorline!<CR>
 nnoremap än :set number! number?<CR>
 nnoremap äN :set relativenumber! relativenumber?<CR>
 " nnoremap äo
@@ -2201,30 +2391,43 @@ onoremap iI :normal ViI<CR>
 " Folding <<<
 vnoremap az :<C-U>silent! normal! [zV]z<CR>
 vnoremap iz :<C-U>silent! normal! [zjV]zk<CR>
-onoremap az :normal Vaf<CR>
-onoremap iz :normal Vif<CR>
+onoremap az :normal Vaz<CR>
+onoremap iz :normal Viz<CR>
+" >>>
+" Whole File/Buffer <<<
+vnoremap af :<C-U>silent! normal! ggVG<CR>
+vnoremap if :<C-U>silent! normal! ggVG<CR>
+onoremap af :normal Vaf<CR>
+onoremap if :normal Vif<CR>
 " >>>
 " >>>
 " Misc <<<
 nnoremap gA :call GetHighlightGroup()<CR>
 nnoremap gG ggVG
 nnoremap g. @:
-nnoremap gp '[v']
+nnoremap g: :<C-r><C-l><CR>
+xnoremap g: "zy:<C-r>z<CR>
+nnoremap gp `[v`]
 nnoremap gr :r <cfile><CR>
+nnoremap gR :redraw!<CR>
 nnoremap gs :%s;;
 xnoremap gs :s;\%V;
 nnoremap gS V:Sum<CR>
 xnoremap gS :Sum<CR>
+nnoremap =<space> :EvalEquation<CR>$
+inoremap ä= <ESC>:EvalEquation<CR>A
 nnoremap z+ zt5<C-y>
 nnoremap z- zb5<C-e>
 nnoremap Q @q
+nnoremap • @@
 nnoremap Y y$
 xnoremap Y "+y
 nnoremap <C-p> "+p
-xnoremap <C-p> c+
+xnoremap <C-p> "+p
 xnoremap <silent> P p:call setreg('"', getreg('0'), getregtype('0'))<CR>
 " xnoremap P pgvy
 nnoremap U <C-R>
+nnoremap dm :delm! \| delm A-Z0-9<>\" \| echo "all marks deleted"<CR>
 nnoremap cd :cd %:p:h<CR>
 nnoremap cu :cd ..<CR>
 nnoremap yp :call YankPath()<CR>
@@ -2243,10 +2446,11 @@ nnoremap ü <C-w>
 tnoremap ü <C-w>
 " nnoremap <C-w>ü :helpclose<CR> TODO preferred solution
 nnoremap üü :helpclose<CR>
-nnoremap üä :vertical rightbelow terminal<CR>
+nnoremap ß :vertical rightbelow terminal<CR>
 inoremap ö <C-c>
 cnoremap ö <C-c>
 inoremap Ö <C-v>
+cnoremap Ö <C-v>
 " cnoremap Ö <C-v> ???? what the heck ????
 " s-tab gets set by snipmate
 inoremap <S-TAB> <C-v><TAB>
@@ -2259,7 +2463,10 @@ vnoremap <expr> <C-i> mode() ==? "\<C-v>" ? ':Right<CR>'  : ':right<CR>'
 " nnoremap <expr> <CR> 'm`' . v:count1 . "GO<ESC>0D``"
 " nnoremap öL :call LaTeXMenu("viw")<CR>
 " xnoremap öL :call LaTeXMenu("gv")<CR>
-"
+
+xnoremap <expr> A mode() !=# "\<C-v>" ? '<C-v>$A' : 'A'
+xnoremap <expr> I mode() !=# "\<C-v>" ? '<C-v>0I' : 'I'
+
 " augroup COMPLETE
 "    autocmd!
 "    autocmd CompleteDone <buffer> call LatexFontContinue()
@@ -2296,9 +2503,8 @@ nmenu &Utils.StripLines&Left :%s;^\s\+;;<CR>
 vmenu &Utils.StripLines&Left :s;^\s\+;;<CR>
 
 " reverse lines 
-nmenu &Utils.&RevLines :g/^/m0
+nmenu &Utils.&RevLines :g/^/m0<CR>
 vmenu &Utils.&RevLines :call RevSelLines()<CR>
-" vmenu &Utils.&RevLines2 <ESC>:let top=line("'<")-1<CR>:'<,'>:g/^/exec "m".top<CR>
 
 " forward backward slashes
 nmenu &Utils.&BackSlash2Slash :%s;\\;/;ge<CR>
@@ -2368,7 +2574,6 @@ if has("macunix")
       set background=dark
       let g:gruvbox_italics=0
       colorscheme gruvbox
-      " colorscheme monokai
 
       " hi CursorLine guifg=#232526 guibg=#F92672
 
@@ -2382,7 +2587,6 @@ if has("macunix")
       set background=dark
       let g:gruvbox_italics=0
       colorscheme gruvbox
-      " colorscheme default
 
    endif
 
@@ -2473,6 +2677,11 @@ else
 
    set ttyfast
 
+   " https://vim.fandom.com/wiki/Change_cursor_shape_in_different_modes#For_VTE_compatible_terminals_.28urxvt.2C_st.2C_xterm.2C_gnome-terminal_3.x.2C_Konsole_KDE5_and_others.29_and_wsltty
+   let &t_SI = "\<Esc>[6 q"
+   let &t_SR = "\<Esc>[4 q"
+   let &t_EI = "\<Esc>[2 q"
+
    " hi red ctermfg=167 ctermbg=236 cterm=bold
    " hi grn ctermfg=143 ctermbg=236 cterm=bold
    " hi org ctermfg=173 ctermbg=236 cterm=bold
@@ -2493,6 +2702,11 @@ else
    " hi Match9 ctermfg=White ctermbg=10
 
 endif " >>>
+
+" hi DiffAdd    ctermfg=White ctermbg=1 guifg=White guibg=grey62
+" hi DiffChange ctermfg=White ctermbg=1 guifg=White guibg=grey62
+" hi DiffDelete ctermfg=White ctermbg=1 guifg=White guibg=grey62
+" hi DiffText   ctermfg=White ctermbg=1 guifg=White guibg=grey62
 
 set statusline=%#SLOrg#CD=%#SLNrm#%{getcwd()}%=\ 
 set statusline+=%#SLYlw#SESSION=%#SLNrm#%{GetFileName(v:this_session)}\ 

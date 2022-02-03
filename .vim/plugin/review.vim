@@ -91,7 +91,6 @@ function! GetEntry(FileName, LineNum) abort " <<<
    if has_key(s:Data.review, l:FileName) == 0
       let s:Data.review[l:FileName] = []
    endif
-   " let l:FileData = get(s:Data.review, l:FileName, [])
    let l:FileData = s:Data.review[l:FileName]
    for entry in l:FileData
       if l:LineNum == entry["line"]
@@ -105,15 +104,8 @@ endfunction " >>>
 function! GetComment() abort " <<<
    let l:FileName = expand("%")
    let l:LineNum = line('.')
-   " let l:FileData = get(s:Data.review, l:FileName, [])
    let l:Entry = GetEntry(l:FileName, l:LineNum)
    return l:Entry['comment']
-   " for entry in l:FileData
-   "    if l:LineNum == entry["line"]
-   "       return entry['comment']
-   "    endif
-   " endfor
-   " return []
 endfunction " >>>
 
 function! SetSigns() abort " <<<
@@ -158,7 +150,6 @@ function! TurnOnMappings() abort  " <<<
    nnoremap <nowait> r :call SetStatus("noreview")<CR>
    nnoremap <nowait> c :call CommentLine()<CR>
    nnoremap <nowait> e :call EndReview()<CR>
-   " nnoremap <nowait> x :call SaveComment()<CR>
 endfunction " >>>
 
 function! TurnOffMappings() abort  " <<<
@@ -168,7 +159,6 @@ function! TurnOffMappings() abort  " <<<
    silent! unmap r
    silent! unmap c
    silent! unmap e
-   " silent! unmap x
 endfunction " >>>
 
 function! CommentLine() abort " <<<
