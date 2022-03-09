@@ -2,3 +2,5 @@
 .vim/.netrwhist
 .vim/sessions/*
 .vim/undodir/*
+.vim/colors/gruvbox.256
+.vim/colors/gruvbox.bak
