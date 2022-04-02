@@ -295,17 +295,17 @@ endfunction
 
 " grep match colors <<<
 let s:Matches= 
-\{ 
-\  'Match1':'false', 
-\  'Match2':'false', 
-\  'Match3':'false', 
-\  'Match4':'false', 
-\  'Match5':'false', 
-\  'Match6':'false', 
-\  'Match7':'false', 
-\  'Match8':'false', 
-\  'Match9':'false' 
-\} 
+         \{ 
+         \  'Match1':'false', 
+         \  'Match2':'false', 
+         \  'Match3':'false', 
+         \  'Match4':'false', 
+         \  'Match5':'false', 
+         \  'Match6':'false', 
+         \  'Match7':'false', 
+         \  'Match8':'false', 
+         \  'Match9':'false' 
+         \} 
 
 function! DefMatchColors() " <<<
    " put after colorscheme load and somehow reload after colorscheme changes or make as part of the colorscheme, latter is the preferred solution
@@ -324,7 +324,7 @@ endfunction " >>>
 function! ClearMatches()
    call clearmatches()
    for [mgrp, val] in items(s:Matches)
-         let s:Matches[mgrp]='false'
+      let s:Matches[mgrp]='false'
    endfor
 endfunction
 
@@ -530,16 +530,16 @@ endfunction " >>>
 
 " clean up <<<
 function! CleanUp()
-      call delete(g:BalloonText)
-      call delete(g:MsgFile)
-      call delete(g:SignVimFile)
+   call delete(g:BalloonText)
+   call delete(g:MsgFile)
+   call delete(g:SignVimFile)
 endfunction
 " >>>
 
 " change register type <<<
 function! ChangeRegType(RegName, ...)
-" 1 optional parameter for the new regtype ("c", "l" or "b")
-" if omitted cycle through characterwise, linewise, blockwise
+   " 1 optional parameter for the new regtype ("c", "l" or "b")
+   " if omitted cycle through characterwise, linewise, blockwise
 
    let l:CurRegType = getregtype(a:RegName)
 
@@ -578,7 +578,7 @@ function! ChangeRegType(RegName, ...)
 
    echo "changing regtype for register " . a:RegName . " from " . l:CurRegType . " to " . l:NewRegType
    call setreg(a:RegName, getreg(a:RegName), l:NewRegType)
- 
+
 endfunction " >>>
 
 " rearrange columns <<<
@@ -673,7 +673,7 @@ function! VisualBlock(a, sep)
    if a:sep == ''
       let l:SepNum = getchar()
       if l:SepNum == 27 " abort on ESC
-          return
+         return
       endif
       let l:Separator = nr2char(l:SepNum)
    else
@@ -865,7 +865,7 @@ function! IndTxtObj(inner, zeroindent)
       endif
    endwhile
    " >>>
-   
+
    call cursor(l:UpperLine, 1)
    normal! V
    call cursor(l:LowerLine, 1)
@@ -977,8 +977,8 @@ endfunction " >>>
 
 " get visual selection <<<
 function! GetVisualSelection()
-    silent! normal! gv"xy
-    return @x
+   silent! normal! gv"xy
+   return @x
 endfunction " >>>
 
 " extract numbers from string <<<
@@ -994,7 +994,7 @@ function! ExtractNumbersFromString(str)
 
       " let l:Result = matchstrpos(l:Str, '\([+-]*0x\x\+\)\|\([+-]*0b[01]\+\)\|\([+-]*\d\+\)', l:Start)
       let l:Result = matchstrpos(l:Str, '\([+-]\?0x\x\+\)\|\([+-]\?0b[01]\+\)\|\([-+]\?\d*\.\?\d\+\([eE][-+]\?\d\+\)\?\)', l:Start)
-      
+
       let l:Match  = l:Result[0]
       let l:Start  = l:Result[1]
       let l:End    = l:Result[2]
@@ -1020,10 +1020,11 @@ endfunction " >>>
 " eval equation <<<
 function! EvalEquation()
    let l:Line = getline('.')
+   let l:Line = substitute(l:Line, '=\s*$', '', '')
    let l:Equation = substitute(l:Line, '.*=', '', '')
    call setline('.', l:Line .. " = " .. string(eval(l:Equation)))
 endfunction " >>>
- 
+
 " yank path <<<
 function! YankPath()
    let l:Path      = expand('%:p')
@@ -1041,16 +1042,16 @@ endfunction
 
 " serialize data <<<
 function! SerializeData(var, file)
-    " let serialized = string(a:var)
-    " call writefile([serialized], a:file)
-    call writefile([string(a:var)], a:file)
+   " let serialized = string(a:var)
+   " call writefile([serialized], a:file)
+   call writefile([string(a:var)], a:file)
 endfun " >>>
 
 " read data <<<
 function! ReadData(file)
-    " execute "let result = " . readfile(a:file)[0]
-    execute "let result = " . join(readfile(a:file))
-    return result
+   " execute "let result = " . readfile(a:file)[0]
+   execute "let result = " . join(readfile(a:file))
+   return result
 endfun " >>>
 
 " join lines <<<
@@ -1070,8 +1071,8 @@ function! Join(trim, ...) range
       let l:joinrange = a:firstline . ';' . a:lastline
    endif
    if (a:trim == "!") && (a:firstline != l:lasttrimline)
-         let l:firsttrimline = a:firstline + 1
-         silent execute l:firsttrimline . ';' . l:lasttrimline . 's/^.*$/\=trim(getline("."))/'
+      let l:firsttrimline = a:firstline + 1
+      silent execute l:firsttrimline . ';' . l:lasttrimline . 's/^.*$/\=trim(getline("."))/'
    endif
    silent execute a:firstline . ';' . l:lastsepline . 's/$/' . l:sep . '/'
    silent execute l:joinrange . 'j!'
@@ -1283,7 +1284,7 @@ function! GetLines(String)
    endfor
    return l:LineList
 endfunction
- 
+
 " FEATURES
 " super foo bar trouper
 " super foo bra trouper
@@ -1692,10 +1693,10 @@ nnoremap <SPACE>o :OldFiles<CR>
 " >>>
 " yank search matches <<<
 function! YankSearchMatches(reg)
-  let l:SearchMatches = []
-  %s//\=len(add(l:SearchMatches, submatch(0)))/gne
-  let l:Register = empty(a:reg) ? '"' : a:reg
-  call setreg(l:Register, l:SearchMatches, "l")
+   let l:SearchMatches = []
+   %s//\=len(add(l:SearchMatches, submatch(0)))/gne
+   let l:Register = empty(a:reg) ? '"' : a:reg
+   call setreg(l:Register, l:SearchMatches, "l")
 endfunction
 command! -register YankSearchMatches call YankSearchMatches(<q-reg>)
 ">>>
@@ -1878,7 +1879,7 @@ set showmode
 set wildmenu
 set wrapscan
 " if environ()['SHELL'] != '/bin/bash'
-   set termguicolors
+set termguicolors
 " endif
 set title
 " set undofile
@@ -1946,23 +1947,23 @@ sign define C text=▶︎ texthl=red
 " →
 
 "function! Diff()
-   " let l:opt = ''
-   " if &diffopt =~ 'icase'
-   "    let l:opt = opt . '-i '
-   " endif
-   " if &diffopt =~ 'iwhite'
-   "    let l:opt = opt . '-b '
-   " endif
+" let l:opt = ''
+" if &diffopt =~ 'icase'
+"    let l:opt = opt . '-i '
+" endif
+" if &diffopt =~ 'iwhite'
+"    let l:opt = opt . '-b '
+" endif
 "   silent execute '!git diff --patience --no-color ' . v:fname_in . ' ' . v:fname_new
 "endfunction
 " set diffexpr=Diff()
 set diffopt=vertical,filler
 if &diff
-    set cursorbind
-    set scrollbind
- else
-    set nocursorbind
-    set noscrollbind
+   set cursorbind
+   set scrollbind
+else
+   set nocursorbind
+   set noscrollbind
 endif
 " >>>
 
@@ -2048,14 +2049,14 @@ nnoremap <F12> :silent !ctags --langmap=c:.c.h -f .tags -R --tag-relative=yes --
 " Grep <<<
 " TODO: test with regex searches
 let g:RgHint="rg [options] pattern [path, ...]\n
-             \-w whole words \| -i case insensitive \| -s case sensitive \| -v invert match\n
-             \-F literally \| --hidden search hidden files \| -t type -T non-type \| -e regex\n
-             \--max-depth NUM \| -A NUM after \| -B NUM before \| -C NUM context"
+         \-w whole words \| -i case insensitive \| -s case sensitive \| -v invert match\n
+         \-F literally \| --hidden search hidden files \| -t type -T non-type \| -e regex\n
+         \--max-depth NUM \| -A NUM after \| -B NUM before \| -C NUM context"
 
 let g:FdHint="fd [options] [pattern] [path, ...]\n
-             \-s case sensitive \| -i case insensitive \| -g glob based \| -t type\n
-             \-F literally \| -H search hidden files \| -E exclude glob\n
-             \-d MAXDEPTH \| -S SIZE \| -e extension \| -a absolute paths"
+         \-s case sensitive \| -i case insensitive \| -g glob based \| -t type\n
+         \-F literally \| -H search hidden files \| -E exclude glob\n
+         \-d MAXDEPTH \| -S SIZE \| -e extension \| -a absolute paths"
 
 " sh   |map          |cmd           |desc
 " -----|-------------|--------------|-----------------------------------------------
@@ -2130,10 +2131,10 @@ nnoremap N Nzz
 nnoremap * *N
 nnoremap # #N
 " TODO use MakeRegExSafe()
-xnoremap / y/\V"<CR>
-xnoremap ? y/\V\<"\><CR>
-xnoremap * y/\V\<"<CR>
-xnoremap # y/\V"\><CR>
+xnoremap / "vy/\Vv<CR>
+xnoremap ? "vy/\V\<v\><CR>
+xnoremap * "vy/\V\<v<CR>
+xnoremap # "vy/\Vv\><CR>
 
 nnoremap <SPACE><SPACE> /
 nnoremap <SPACE><C-SPACE> /\c
@@ -2171,7 +2172,6 @@ nnoremap ö<SPACE> :b#<CR>
 nnoremap öw :w!<CR>
 nnoremap öd :bd!<CR>
 nnoremap öD :silent %bd<BAR>e#<CR>
-nnoremap öx :%d<CR>
 nnoremap öu :e!<CR>
 " >>>
 " Vimrc <<<
@@ -2395,8 +2395,8 @@ onoremap az :normal Vaz<CR>
 onoremap iz :normal Viz<CR>
 " >>>
 " Whole File/Buffer <<<
-vnoremap af :<C-U>silent! normal! ggVG<CR>
-vnoremap if :<C-U>silent! normal! ggVG<CR>
+xnoremap af :<C-U>silent! normal! ggVG<CR>
+xnoremap if :<C-U>silent! normal! ggVG<CR>
 onoremap af :normal Vaf<CR>
 onoremap if :normal Vif<CR>
 " >>>
@@ -2414,7 +2414,8 @@ nnoremap gs :%s;;
 xnoremap gs :s;\%V;
 nnoremap gS V:Sum<CR>
 xnoremap gS :Sum<CR>
-nnoremap =<space> :EvalEquation<CR>$
+nnoremap g= :EvalEquation<CR>$
+xnoremap g= "xc=string(eval(@x))<ESC>
 inoremap ä= <ESC>:EvalEquation<CR>A
 nnoremap z+ zt5<C-y>
 nnoremap z- zb5<C-e>
@@ -2548,16 +2549,16 @@ if has("win32")
 
       colorscheme gruvbox
 
-	else
+   else
 
       " Cmder
-		set term=xterm
-		set t_Co=256
-		let &t_AB="\e[48;5;%dm"
-		let &t_AF="\e[38;5;%dm"
-		" colorscheme zenburn
+      set term=xterm
+      set t_Co=256
+      let &t_AB="\e[48;5;%dm"
+      let &t_AF="\e[38;5;%dm"
+      " colorscheme zenburn
 
-	endif
+   endif
 
 else " all Unixoids
 
@@ -2639,7 +2640,7 @@ if has("gui_running")
    " hi CursorLine   guifg=white guibg=#2b3f4a
    " hi CursorColumn guifg=white guibg=#2b3f4a
    " hi ColorColumn  guifg=#232526 guibg=#F92672
-   
+
    "hi MyBooleanTrue  guifg=green
    "hi MyBooleanFalse guifg=red
    "syn keyword MyBooleanTrue  yes on true enable high contained
