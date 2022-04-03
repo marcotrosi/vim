@@ -184,16 +184,42 @@ endfunction
 " >>>
 
 " cycle font type and size <<< 
-let s:myFontType     = 6 
-let s:myFontSize     = 4 
-let s:myFontTypeList = ["Courier\\ New", "Lucida\\ Console", "Consolas", "Hack", "Menlo", "DejaVu\\ Sans\\ Mono", "Fira\\ Code", "JetBrains\\ Mono", "Inconsolata"]
+let s:myFontType     = 4 
+let s:myFontSize     = 6 
+let s:myFontTypeList = [
+         \ "Courier New",
+         \ "DejaVu Sans Mono",
+         \ "Fira Code Light",
+         \ "Fira Code Regular",
+         \ "Fira Code Retina",
+         \ "Hack Regular",
+         \ "Inconsolata Regular",
+         \ "JetBrains Mono NL ExtraLight",
+         \ "JetBrains Mono NL Light",
+         \ "JetBrains Mono NL Regular",
+         \ "JetBrains Mono NL Semi Light",
+         \ "Menlo Regular",
+         \ "Monoid Regular",
+         \ "Monoid Retina",
+         \ "Office Code Pro Light",
+         \ "Office Code Pro",
+         \ "SF Mono Light",
+         \ "SF Mono Regular",
+         \ "Source Code Pro ExtraLight",
+         \ "Source Code Pro Light",
+         \ "Source Code Pro",
+         \ "Victor Mono ExtraLight",
+         \ "Victor Mono Light",
+         \ "Victor Mono Regular",
+         \ "Victor Mono Thin"
+         \]
 let s:myFontSizeList = ["7", "8", "9", "10", "11", "12", "13", "14", "15", "16"]
 
 function! CycleFontType(direction) 
    let s:myFontType = s:myFontType + a:direction
    if s:myFontType >= len(s:myFontTypeList) | let s:myFontType = 0 | endif 
    if s:myFontType < 0 | let s:myFontType = len(s:myFontTypeList)-1 | endif 
-   exe "set guifont=".s:myFontTypeList[s:myFontType].":h".s:myFontSizeList[s:myFontSize] 
+   exe "set guifont="..substitute(s:myFontTypeList[s:myFontType], " ", "\\\\ ", "g")..":h"..s:myFontSizeList[s:myFontSize] 
    redraw 
    set guifont? 
 endfunction
@@ -202,9 +228,13 @@ function! CycleFontSize(direction)
    let s:myFontSize = s:myFontSize + a:direction
    if s:myFontSize >= len(s:myFontSizeList) | let s:myFontSize = 0   | endif 
    if s:myFontSize <  0 | let s:myFontSize = len(s:myFontSizeList)-1 | endif 
-   exe "set guifont=".s:myFontTypeList[s:myFontType].":h".s:myFontSizeList[s:myFontSize] 
+   exe "set guifont="..substitute(s:myFontTypeList[s:myFontType], " ", "\\\\ ", "g")..":h"..s:myFontSizeList[s:myFontSize] 
    redraw 
    set guifont? 
+endfunction
+
+function! GetMyFont()
+   return s:myFontTypeList[s:myFontType]..":h"..s:myFontSizeList[s:myFontSize]
 endfunction
 " >>> 
 
@@ -2635,7 +2665,7 @@ if has("gui_running")
 
    set guicursor=n-v-c:block-Cursor/lCursor-blinkwait0-blinkoff0-blinkon0,ve:ver35-Cursor,o:hor50-Cursor,i-ci:ver10-Cursor/lCursor,r-cr:hor20-Cursor/lCursor,sm:block-Cursor-blinkwait0-blinkoff0-blinkon0
 
-   exe "set guifont=".s:myFontTypeList[s:myFontType].":h".s:myFontSizeList[s:myFontSize]
+   exec "set guifont="..substitute(s:myFontTypeList[s:myFontType], " ", "\\\\ ", "g")..":h"..s:myFontSizeList[s:myFontSize]
 
    " hi CursorLine   guifg=white guibg=#2b3f4a
    " hi CursorColumn guifg=white guibg=#2b3f4a
@@ -2710,6 +2740,7 @@ endif " >>>
 " hi DiffText   ctermfg=White ctermbg=1 guifg=White guibg=grey62
 
 set statusline=%#SLOrg#CD=%#SLNrm#%{getcwd()}%=\ 
+" set statusline+=%#SLBlu#FONT=%#SLNrm#%{GetMyFont()}\ 
 set statusline+=%#SLYlw#SESSION=%#SLNrm#%{GetFileName(v:this_session)}\ 
 set statusline+=%#SLRed#\ PERM=%#SLNrm#%{getfperm(expand('%'))}\ 
 set statusline+=%#SLRed#FORMAT=%#SLNrm#%{&ff}\ 
