@@ -385,6 +385,62 @@ function! ReverseString(str)
 endfunction
 " >>>
 
+" sort <<<
+function! Sort(text, type)
+
+   let l:Left  = getpos("'[")
+   let l:Right = getpos("']")
+   " let l:RegS  = getreginfo('s')
+
+   if (a:type == 'char') || (l:Left[1] == l:Right[1])
+      let l:Lines = split(a:text)
+      call sort(l:Lines)
+		let l:Text = join(l:Lines)
+      call setreg('s', l:Text)
+      normal gv"sp
+   endif
+
+   if a:type == 'line'
+      '[,']sort
+   endif
+
+   if a:type == 'block'
+      echom l:Left
+      echom l:Right
+      let l:Lines = split(a:text, '\n')
+      call sort(l:Lines)
+      call setreg('s', l:Lines, "b")
+      normal gv"sp
+   endif
+
+   " call setreg('s', l:RegS)
+endfunction
+
+function! SortCmd(type = '') abort
+   if a:type == ''
+      set opfunc=SortCmd
+      return 'g@'
+   endif
+   let sel_save = &selection
+   let reg_save = getreginfo('"')
+   let cb_save = &clipboard
+   let visual_marks_save = [getpos("'<"), getpos("'>")]
+
+   try
+      set clipboard= selection=inclusive
+      let commands = #{line: "'[V']y", char: "`[v`]y", block: "`[\<c-v>`]y"}
+      silent exe 'noautocmd keepjumps normal! ' .. get(commands, a:type, '')
+      call getreg('"')->Sort(a:type)
+   finally
+      call setreg('"', reg_save)
+      call setpos("'<", visual_marks_save[0])
+      call setpos("'>", visual_marks_save[1])
+      let &clipboard = cb_save
+      let &selection = sel_save
+   endtry
+endfunction
+" >>>
+
 " toggle foldcolumn <<<
 function! ToggleFoldColumn()
    if &foldcolumn
@@ -1044,8 +1100,22 @@ endfunction " >>>
 
 " calculate sum <<<
 function! Sum(numbers)
-   return eval(join(a:numbers, '+'))
-endfunction " >>>
+   echom a:numbers
+   let l:Result = eval(join(a:numbers, '+'))
+   echom l:Result
+   return l:Result
+endfunction
+
+function! SumCmd(type = '')
+   if a:type == ''
+      set opfunc=SumCmd
+      return 'g@'
+   endif
+   let commands = #{line: "'[V']y", char: "`[v`]y", block: "`[\<c-v>`]y"}
+   silent exe 'noautocmd keepjumps normal! ' .. get(commands, a:type, '')
+   call setreg('"', Sum(ExtractNumbersFromString(getreg('"'))), 'l')
+endfunction
+" >>>
 
 " eval equation <<<
 function! EvalEquation()
@@ -1750,7 +1820,6 @@ command! -range -nargs=* ReArrangeColumns <line1>,<line2>call ReArrangeColumns(<
 command! -nargs=* Grep call Grep('<args>')
 command! -nargs=* GrepBuffers call GrepBuffers('<args>')
 command! -nargs=* Find call Find('<args>')
-command! -range -nargs=0 Sum echo Sum(ExtractNumbersFromString(GetVisualSelection()))
 command! EvalEquation call EvalEquation()
 command! -range Asciify <line1>,<line2>call Asciify()
 command! -range=% -nargs=? -complete=file New silent <line1>,<line2>yank x | enew | put! x | $d_ | if(<q-args> != '') | silent write <args> | endif
@@ -2431,6 +2500,11 @@ onoremap af :normal Vaf<CR>
 onoremap if :normal Vif<CR>
 " >>>
 " >>>
+" Sort <<<
+nnoremap <expr> gs SortCmd()
+xnoremap <expr> gs SortCmd()
+nnoremap <expr> gss SortCmd() .. '_'
+" >>>
 " Misc <<<
 nnoremap gA :call GetHighlightGroup()<CR>
 nnoremap gG ggVG
@@ -2440,10 +2514,11 @@ xnoremap g: "zy:<C-r>z<CR>
 nnoremap gp `[v`]
 nnoremap gr :r <cfile><CR>
 nnoremap gR :redraw!<CR>
-nnoremap gs :%s;;
-xnoremap gs :s;\%V;
-nnoremap gS V:Sum<CR>
-xnoremap gS :Sum<CR>
+" nnoremap gs :%s;;
+" xnoremap gs :s;\%V;
+nnoremap <expr> gS SumCmd()
+xnoremap <expr> gS SumCmd()
+nnoremap <expr> gSS SumCmd() .. '_'
 nnoremap g= :EvalEquation<CR>$
 xnoremap g= "xc=string(eval(@x))<ESC>
 inoremap ä= <ESC>:EvalEquation<CR>A
