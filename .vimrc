@@ -369,7 +369,7 @@ function! NextMatch()
 endfunction
 
 function! AddMatch(str)
-   call matchadd(NextMatch(), MakeRegExSafe(a:str))
+   call matchadd(NextMatch(), Escape(a:str))
 endfunction
 " >>>
 
@@ -702,9 +702,9 @@ function! FixFile()
    end
 endfunction " >>>
 
-" make regex safe <<<
-function! MakeRegExSafe(str)
-   return '\V'.substitute(a:str, '\\', '\\\\', 'g')
+" escape regex <<<
+function! Escape(str)
+   return '\V' .. escape(a:str, '\\/')
 endfunction " >>>
 
 " edit register <<<
@@ -2229,11 +2229,14 @@ nnoremap n nzz
 nnoremap N Nzz
 nnoremap * *N
 nnoremap # #N
-" TODO use MakeRegExSafe()
-xnoremap / "vy/\Vv<CR>
-xnoremap ? "vy/\V\<v\><CR>
-xnoremap * "vy/\V\<v<CR>
-xnoremap # "vy/\Vv\><CR>
+
+" search as regex
+xnoremap / y/<C-R>"<CR>
+xnoremap ? y?<C-R>"<CR>
+
+" search literally
+xnoremap * y/<C-R>=Escape(@")<CR><CR>
+xnoremap # y?<C-R>=Escape(@")<CR><CR>
 
 nnoremap <SPACE><SPACE> /
 nnoremap <SPACE><C-SPACE> /\c
@@ -2313,7 +2316,7 @@ xnoremap <S-Down> :m'>+<CR>gv=gv
 " Indent <<<
 xnoremap <C-l> >gv
 xnoremap <C-h> <gv
-nnoremap g= gg=Gg``zz
+" nnoremap g= gg=Gg``zz
 " >>>
 " Fold <<<
 nnoremap zp vip<ESC>'<A =C<CR> <<<<ESC>'>A =C<CR> >>><ESC>
@@ -2466,30 +2469,30 @@ nnoremap ä<TAB> :set expandtab! expandtab?<CR>
 " >>>
 " Text Objects <<<
 " Visual Block <<<
-vnoremap ab :<C-U>call VisualBlock(1,',')<CR>
-vnoremap ib :<C-U>call VisualBlock(0,',')<CR>
+xnoremap ab :<C-U>call VisualBlock(1,',')<CR>
+xnoremap ib :<C-U>call VisualBlock(0,',')<CR>
 onoremap ab :normal vab<CR>
 onoremap ib :normal vib<CR>
 
-vnoremap aB :<C-U>call VisualBlock(1,'')<CR>
-vnoremap iB :<C-U>call VisualBlock(0,'')<CR>
+xnoremap aB :<C-U>call VisualBlock(1,'')<CR>
+xnoremap iB :<C-U>call VisualBlock(0,'')<CR>
 onoremap aB :normal vaB<CR>
 onoremap iB :normal viB<CR>
 " >>>
 " Indent Level <<<
-vnoremap <silent>ai :<C-U>call IndTxtObj(0, 0)<CR>
-vnoremap <silent>ii :<C-U>call IndTxtObj(1, 0)<CR>
+xnoremap <silent>ai :<C-U>call IndTxtObj(0, 0)<CR>
+xnoremap <silent>ii :<C-U>call IndTxtObj(1, 0)<CR>
 onoremap ai :normal Vai<CR>
 onoremap ii :normal Vii<CR>
 
-vnoremap <silent>aI :<C-U>call IndTxtObj(0, 1)<CR>
-vnoremap <silent>iI :<C-U>call IndTxtObj(1, 1)<CR>
+xnoremap <silent>aI :<C-U>call IndTxtObj(0, 1)<CR>
+xnoremap <silent>iI :<C-U>call IndTxtObj(1, 1)<CR>
 onoremap aI :normal VaI<CR>
 onoremap iI :normal ViI<CR>
 " >>>
 " Folding <<<
-vnoremap az :<C-U>silent! normal! [zV]z<CR>
-vnoremap iz :<C-U>silent! normal! [zjV]zk<CR>
+xnoremap az :<C-U>silent! normal! [zV]z<CR>
+xnoremap iz :<C-U>silent! normal! [zjV]zk<CR>
 onoremap az :normal Vaz<CR>
 onoremap iz :normal Viz<CR>
 " >>>
