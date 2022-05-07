@@ -2018,6 +2018,7 @@ set mousemodel=popup_setpos
 set nrformats=bin,hex
 set pastetoggle=ä<SPACE>
 set path=.,,** " use :checkpath
+set scrolloff=10
 set sessionoptions=buffers,curdir
 set shortmess=fIlmnxtToO
 set spelllang=en
