@@ -22,8 +22,6 @@ function! Sessions() " <<<
       call add(s:ListOfDisplayedSessions, ' '.l:FileName)
    endfor
 
-   " let l:Content = join(s:ListOfDisplayedSessions, "\n")
-   " return [l:PanelWidth, l:Content, 1]
    return [l:PanelWidth, s:ListOfDisplayedSessions, 1]
 
 endfunction " >>>

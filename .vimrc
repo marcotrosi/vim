@@ -1807,6 +1807,78 @@ function! EvalDigraph()
 endfunction
 inoremap <S-SPACE> <ESC>:call EvalDigraph()<CR>a
 " >>>
+" silicon <<<
+function! Silicon()
+   '<,'>yank *
+   exec "silent !silicon --from-clipboard --to-clipboard --theme gruvbox --background '\\#D6D6D6' --shadow-blur-radius 5 --shadow-offset-x 10 --shadow-offset-y 8 --pad-horiz 40 --pad-vert 40 --language " .. &filetype
+   redraw!
+endfunction
+command! -range Silicon call Silicon()
+xnoremap SS :Silicon<CR>
+" >>>
+" menu <<<
+let g:MenuUsePopup = v:false
+let g:PopupMenuChoice = -1
+
+function! PopupMenuCallback(id, result)
+   let g:PopupMenuChoice = a:result - 1
+endfunction
+
+function! GenerateMenuString(MenuEntry, Mode)
+   let l:MenuItemNames      = []
+   let l:MenuItemDisplNames = []
+
+   if g:MenuUsePopup == v:false
+      call add(l:MenuItemDisplNames, "Abort") " dummy item as offset
+   endif
+
+   let l:MenuInfo = menu_info(a:MenuEntry, a:Mode)
+   if has_key(l:MenuInfo, 'submenus')
+      for i in l:MenuInfo['submenus']
+         if a:MenuEntry == ''
+            let l:SubMenuEntry = i
+         else
+            let l:SubMenuEntry = a:MenuEntry .. '.' .. i
+         endif
+         call add(l:MenuItemNames, menu_info(l:SubMenuEntry)['name'])
+         call add(l:MenuItemDisplNames, menu_info(l:SubMenuEntry)['display'])
+      endfor
+   else
+      return a:MenuEntry
+   endif
+
+   if g:MenuUsePopup
+      let l:WinID = popup_menu(l:MenuItemDisplNames, {'callback': 'PopupMenuCallback'})
+      let l:Choice = g:PopupMenuChoice
+      if l:Choice < 0
+         return ''
+      endif
+   else
+      let l:Choice = confirm(a:MenuEntry, join(l:MenuItemNames, "\n"))
+      if l:Choice == 0
+         return ''
+      endif
+   endif
+
+   if a:MenuEntry == ''
+      let l:MenuEntry = l:MenuItemDisplNames[l:Choice]
+   else
+      let l:MenuEntry = a:MenuEntry .. '.' .. l:MenuItemDisplNames[l:Choice]
+   endif
+   return GenerateMenuString(l:MenuEntry, a:Mode)
+endfunction
+
+function! Menu()
+   let l:Mode = 'n'
+   let l:MenuString = GenerateMenuString('Utils', l:Mode)
+   if l:MenuString != ''
+      exec "silent emenu " .. l:MenuString
+   endif
+endfunction 
+
+command! Menu call Menu()
+nnoremap M :Menu<CR>
+" >>>
 " >>>
 " >>>
 
@@ -1991,6 +2063,7 @@ execute 'set tabstop='.g:TabSpace
 execute 'set softtabstop='.g:TabSpace
 set shiftwidth=0
 
+set backspace=indent,eol,start
 set backupdir=~/.vim/backupdir,/tmp
 "set balloonexpr=Balloon()
 set belloff=all
@@ -2072,13 +2145,11 @@ augroup VIMRC
 
    autocmd!
 
-   autocmd BufEnter *.c,*.h let C='//' | let g:FunctionPattern_s = '\s\(\w\+\)(.\{-})\s*$'
+   autocmd BufEnter *.c,*.h let g:FunctionPattern_s = '\s\(\w\+\)(.\{-})\s*$'
    "autocmd BufEnter *.c,*.h call HighlightTags()
-   autocmd BufEnter *.lua let C='--' | let g:FunctionPattern_s = '\sfunction\s\+\(\w\+\)'
+   autocmd BufEnter *.lua let g:FunctionPattern_s = '\sfunction\s\+\(\w\+\)'
    "autocmd FileType lua setlocal iskeyword+=:
-   autocmd BufEnter *.tex let C='%'
-   autocmd BufEnter makefile,*.py,*.pl let C='#'
-   autocmd BufEnter .vimrc,*.vim let C='"' | let g:FunctionPattern_s = '^function!\s\+\(\w\+\)'
+   autocmd BufEnter .vimrc,*.vim let g:FunctionPattern_s = '^function!\s\+\(\w\+\)'
    autocmd BufLeave * let g:FunctionPattern_s=''
 
    autocmd BufEnter *.dox set filetype=c.doxygen
@@ -2185,6 +2256,7 @@ nnoremap <SPACE>E :echo g:FdHint<CR>:Edit<SPACE>
 nnoremap <SPACE>g :echo g:RgHint<CR>:Grep<SPACE>
 nnoremap <SPACE>G :echo g:RgHint<CR>:GrepBuffers<SPACE>
 nnoremap <SPACE>h :call CycleColorscheme(0)<CR>
+nnoremap <SPACE>s :call Panel('Cheat')<CR>
 
 "nnoremap ög
 nnoremap gö :call Grep('-F -w -s "' . expand('<cword>') . '" %')<CR>
@@ -2320,10 +2392,9 @@ xnoremap <C-h> <gv
 " nnoremap g= gg=Gg``zz
 " >>>
 " Fold <<<
-nnoremap zp vip<ESC>'<A =C<CR> <<<<ESC>'>A =C<CR> >>><ESC>
-xnoremap zp <ESC>'<A =C<CR> <<<<ESC>'>A =C<CR> >>><ESC>
-nnoremap zP Go=C<CR> vim: fmr=<<<,>>> fdm=marker<ESC>
-" nnoremap zP Go<ESC>:call setline('.', printf(&commentstring, ' vim: fmr=<<<,>>> fdm=marker '))<CR>
+nnoremap gz vip<ESC>'<A =printf(&commentstring, ' '..repeat('<',3))<CR><ESC>'>A =printf(&commentstring, ' '..repeat('>',3))<CR><ESC>
+xnoremap gz <ESC>'<A =printf(&commentstring, ' '..repeat('<',3))<CR><ESC>'>A =printf(&commentstring, ' '..repeat('>',3))<CR><ESC>
+nnoremap gZ G:put =printf(&commentstring, ' vim: fdm=marker fmr=<<<,>>>')<CR>
 " >>>
 " Marks <<<
 nnoremap mn ]`zz
@@ -2465,7 +2536,7 @@ nnoremap äV :set modifiable! modifiable?<CR>
 nnoremap äw :set wrap! wrap?<CR>
 " nnoremap äx
 " nnoremap äy
-" nnoremap äz
+nnoremap äz :call ToggleFoldColumn()<CR>
 nnoremap ä<TAB> :set expandtab! expandtab?<CR>
 " >>>
 " Text Objects <<<
@@ -2585,7 +2656,6 @@ xnoremap <expr> I mode() !=# "\<C-v>" ? '<C-v>0I' : 'I'
 " >>>
 
 " menus <<<
-
 " reduce duplicate lines
 nmenu &Utils.Red&DuplLines :%s;^\(.*\)\(\n\1\)\+$;\1;<CR>
 vmenu &Utils.Red&DuplLines :s;^\(.*\)\(\n\1\)\+$;\1;<CR>
@@ -2638,7 +2708,6 @@ if has("win32")
 
    set viminfofile=D:\\DSUsers\\uid34241\\tools\\vim\\.viminfo
    set directory=$USERPROFILE\AppData\Local\Temp
-   set backspace=2
    set lines=999 columns=999
 
    if has("gui_running")
@@ -2835,7 +2904,7 @@ set statusline+=%#SLBlu#XTAB=%#SLNrm#%{&expandtab}\
 " >>>
 
 "                 | cycle up/down | confirm menu | popup | panel
-" colorschemes    |     x         |       x      |   x   |
+" colorschemes    |     x         |       x      |   x   | x
 " notation        |     x         |       x      |   x   | 
 " font type       |     x         |       x      |   x   |   
 " font size       |     x         |       x      |   x   | 
