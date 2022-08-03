@@ -2256,7 +2256,6 @@ nnoremap <SPACE>E :echo g:FdHint<CR>:Edit<SPACE>
 nnoremap <SPACE>g :echo g:RgHint<CR>:Grep<SPACE>
 nnoremap <SPACE>G :echo g:RgHint<CR>:GrepBuffers<SPACE>
 nnoremap <SPACE>h :call CycleColorscheme(0)<CR>
-nnoremap <SPACE>s :call Panel('Cheat')<CR>
 
 "nnoremap ög
 nnoremap gö :call Grep('-F -w -s "' . expand('<cword>') . '" %')<CR>
@@ -2579,6 +2578,9 @@ onoremap if :normal Vif<CR>
 nnoremap <expr> gs SortCmd()
 xnoremap <expr> gs SortCmd()
 nnoremap <expr> gss SortCmd() .. '_'
+" >>>
+" Cheat Sheets <<<
+nnoremap öz :call Panel('Cheat')<CR>
 " >>>
 " Misc <<<
 nnoremap gA :call GetHighlightGroup()<CR>
