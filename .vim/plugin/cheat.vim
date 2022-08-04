@@ -8,9 +8,9 @@ endif
 
 for cs in s:MyCheatSheetFiles
    if has("win32")
-      call add(s:MyCheatSheets, substitute(substitute(substitute(cs, "\.cs$", "",""), ".*\\", "", ""),"_"," ",""))
+      call add(s:MyCheatSheets, substitute(substitute(substitute(cs, "\.cs$", "",""), ".*\\", "", ""),"_"," ","g"))
    else
-      call add(s:MyCheatSheets, substitute(substitute(substitute(cs, "\.cs$", "",""), ".*/", "", ""),"_"," ",""))
+      call add(s:MyCheatSheets, substitute(substitute(substitute(cs, "\.cs$", "",""), ".*/", "", ""),"_"," ","g"))
    endif
 endfor
 
