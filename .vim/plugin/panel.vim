@@ -3,6 +3,7 @@
 "/Users/marcotrosi/.vim/plugin/sessions.vim
 "/Users/marcotrosi/.vim/plugin/buffers.vim
 "/Users/marcotrosi/.vim/plugin/review.vim
+"/Users/marcotrosi/.vim/plugin/cheat.vim
 
 " Things to consider when using this file
 " 1. provide a function that fills the panel with content and a second function with the same name in the beginning and
