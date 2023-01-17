@@ -13,7 +13,7 @@ function! CycleSpellLang(direction)
    let s:myLang = s:myLang + a:direction
    if s:myLang >= len(s:myLangList) | let s:myLang = 0 | endif
    if s:myLang < 0 | let s:myLang = len(s:myLangList)-1 | endif
-   exe "set spelllang=".s:myLangList[s:myLang]
+   exe "set spelllang=" .. s:myLangList[s:myLang]
    echo "language:" s:myLangList[s:myLang]
 endf
 " >>>
@@ -42,7 +42,7 @@ function! SetColorscheme(id, result)
    endif
 
    let s:myColorscheme = a:result-1
-   exe "colorscheme ".s:myColorschemeList[a:result-1]
+   exe "colorscheme " .. s:myColorschemeList[a:result-1]
    colorscheme
 endfunction
 
@@ -57,6 +57,18 @@ function! CycleColorscheme(direction)
       redraw
       colorscheme
    endif
+endf
+" >>>
+
+" cycle diff algorithms <<<
+let s:DiffAlgorithm=1
+let s:DiffAlgorithms=['minimal', 'patience', 'histogram']
+function! CycleDiffAlgorithm(direction)
+   let s:DiffAlgorithm = s:DiffAlgorithm + a:direction
+   if s:DiffAlgorithm >= len(s:DiffAlgorithms) | let s:DiffAlgorithm = 0 | endif
+   if s:DiffAlgorithm < 0 | let s:DiffAlgorithm = len(s:DiffAlgorithms)-1 | endif
+   exe "set diffopt=vertical,filler,closeoff,algorithm:" .. s:DiffAlgorithms[s:DiffAlgorithm]
+   echo "diffalgorithm:" s:DiffAlgorithms[s:DiffAlgorithm]
 endf
 " >>>
 
@@ -745,27 +757,37 @@ endfunction
 " >>>
 
 " visual block <<<
-function! VisualBlock(a, sep)
+function! VisualBlock(mod, sep)
 
-   " a can be 0 or 1
+   " mod is the mode
    "    0 for ib (separator excluded)
    "    1 for ab (separator included)
    " sep is a single separator character
    "    if sep is an empty string '' then the function
    "    will run getchar() to ask for a separator
 
-   "getcurpos returns [bufnum, lnum, col, off, curswant]
+   let l:AfterLastSep   = 0
+   let l:BeforeFirstSep = 0
+   let l:LongestLine    = 0
 
-   if a:sep == ''
+   " ask user for separator <<<
+   if (a:mod == 0 || a:mod == 1) && a:sep == ''
+      echo "give separator (default ;)\n=> "
       let l:SepNum = getchar()
       if l:SepNum == 27 " abort on ESC
          return
       endif
-      let l:Separator = nr2char(l:SepNum)
+      if l:SepNum == 13 " default ; on CR
+         let l:Separator = ';'
+      else
+         let l:Separator = nr2char(l:SepNum)
+      endif
    else
       let l:Separator = a:sep
    endif
+   " >>>
 
+   " find block edges columns <<<
    " correction of cursor position just in
    " case the cursor was on the separator
    if getline('.')[col('.')-1] == l:Separator
@@ -775,17 +797,17 @@ function! VisualBlock(a, sep)
    let l:CursorCol = l:CursorPos[2] - 1
 
    " find next sep
-   execute 'normal f'.l:Separator
-   let l:NewCursorColRight = getcurpos()[2] - 1
+   execute 'normal f' .. l:Separator
+   let l:SepColRight = getcurpos()[2] - 1
+   let l:NewCursorColRight = l:SepColRight
 
    " if cursor hasn't moved we
    " must be in the last column
-   let l:AfterLastSep = 0
    if l:NewCursorColRight == l:CursorCol
       let l:AfterLastSep = 1
       let l:BlockRightCol = col('$') - 2
    else
-      if a:a
+      if a:mod
          let l:BlockRightCol = l:NewCursorColRight
       else
          let l:BlockRightCol = l:NewCursorColRight - 1
@@ -793,40 +815,80 @@ function! VisualBlock(a, sep)
    endif
 
    " find previous sep
-   execute 'normal F'.l:Separator
-   let l:NewCursorColLeft = getcurpos()[2] - 1
+   execute 'normal F' .. l:Separator
+   let l:SepColLeft = getcurpos()[2] - 1
+   let l:NewCursorColLeft = l:SepColLeft
    " if cursor hasn't moved we
    " must be in the first column
    if l:NewCursorColLeft == l:NewCursorColRight
+      let l:BeforeFirstSep = 1
       let l:BlockLeftCol = 0
    else
       " in case of ab and cursor after last
       " separator include the left separator
-      if l:AfterLastSep && a:a
+      if l:AfterLastSep && a:mod
          let l:BlockLeftCol = l:NewCursorColLeft
       else
          let l:BlockLeftCol = l:NewCursorColLeft + 1
       endif
    end
+   " >>>
 
-   normal vip
-   let l:BlockBottomLine = getcurpos()[1]
+   " search end of block downwards <<<
+   " normal vip
+   " let l:BlockBottomLine = getcurpos()[1]
+   let l:BlockBottomLine = line(".")
+   while v:true
+      let l:BlockBottomLine = l:BlockBottomLine + 1
+      if l:BlockBottomLine > line("$")
+         break
+      endif
+      let l:Line = getline(l:BlockBottomLine)
+      let l:LongestLine = max([l:LongestLine, strlen(l:Line)])
+      if (!l:BeforeFirstSep && (l:Line[l:SepColLeft] != l:Separator)) || (!l:AfterLastSep && (l:Line[l:SepColRight] != l:Separator))
+         break
+      endif
+   endwhile
+   let l:BlockBottomLine = l:BlockBottomLine - 1
+   " >>>
 
-   normal gvo
-   let l:BlockTopLine = getcurpos()[1]
+   call setpos('.', l:CursorPos)
 
+   " search start of block upwards <<<
+   " normal gvo
+   " let l:BlockTopLine = getcurpos()[1]
+   let l:BlockTopLine = line(".")
+   while v:true
+      let l:BlockTopLine = l:BlockTopLine - 1
+      if l:BlockTopLine < 1
+         break
+      endif
+      let l:Line = getline(l:BlockTopLine)
+      let l:LongestLine = max([l:LongestLine, strlen(l:Line)])
+      if (!l:BeforeFirstSep && (l:Line[l:SepColLeft] != l:Separator)) || (!l:AfterLastSep && (l:Line[l:SepColRight] != l:Separator))
+         break
+      endif
+   endwhile
+   " >>>
+   let l:BlockTopLine = l:BlockTopLine + 1
+
+   " getcurpos returns [bufnum, lnum, col, off, curswant]
    let l:TopLeftPos     = [l:CursorPos[0], l:BlockTopLine   , l:BlockLeftCol +1, 0]
    let l:BottomRightPos = [l:CursorPos[0], l:BlockBottomLine, l:BlockRightCol+1, 0]
 
+   " create visual block selection <<<
    call setpos('.', l:TopLeftPos)
 
    normal 
 
    call setpos('.', l:BottomRightPos)
 
+   messages clear
+
    if l:AfterLastSep
-      normal $
+      execute "normal " .. l:LongestLine .. "|"
    end
+   " >>>
 
 endfunction
 " >>>
@@ -1977,7 +2039,7 @@ function! PasteReg(direction)
    " let l:WinID = popup_create(l:TermBufNum, {'minwidth': 50, 'minheight': 20})
 endfunction " >>>
 
-function! SelectBuf()
+function! SelectBuf() " <<<
 
    let l:Cmds = []
    let l:NumOfBuffers = bufnr('$')
@@ -2009,6 +2071,7 @@ function! SelectBuf()
    " let l:WinID = popup_create(l:TermBufNum, {'minwidth': 50, 'minheight': 20})
    " execute "b"..SelectedBuffer
 endfunction
+" >>>
 " >>>
 
 " settings <<<
@@ -2049,7 +2112,7 @@ set showmode
 " set splitright
 set wildmenu
 set wrapscan
-" if environ()['SHELL'] != '/bin/bash'
+" if environ()['SHELL'] != '/bin/bash' or $SHELL
 set termguicolors
 " endif
 set title
@@ -2095,7 +2158,7 @@ set scrolloff=10
 set sessionoptions=buffers,curdir
 set shortmess=fIlmnxtToO
 set spelllang=en
-set spellsuggest=9
+set spellsuggest=best,9
 set tags=.tags
 let g:TextWidth=120
 execute 'set textwidth='.g:TextWidth
@@ -2119,18 +2182,7 @@ sign define C text=▶︎ texthl=red
 " ◐ ▲ ◆
 " →
 
-"function! Diff()
-" let l:opt = ''
-" if &diffopt =~ 'icase'
-"    let l:opt = opt . '-i '
-" endif
-" if &diffopt =~ 'iwhite'
-"    let l:opt = opt . '-b '
-" endif
-"   silent execute '!git diff --patience --no-color ' . v:fname_in . ' ' . v:fname_new
-"endfunction
-" set diffexpr=Diff()
-set diffopt=vertical,filler
+exe "set diffopt=vertical,filler,closeoff,algorithm:" .. s:DiffAlgorithms[s:DiffAlgorithm]
 if &diff
    set cursorbind
    set scrollbind
@@ -2167,6 +2219,7 @@ augroup VIMRC
 
    autocmd CmdwinEnter * map <buffer> <S-CR> <C-c><C-e>
    autocmd FileType help nnoremap <buffer> q :helpclose<cr>
+
 augroup END
 " >>>
 
@@ -2458,8 +2511,8 @@ nnoremap +b :silent call CycleBase()<CR>
 " nnoremap -b
 " nnoremap +c :ColorHEX<CR> TODO is not a cycle
 " nnoremap -c
-" nnoremap +d
-" nnoremap -d
+nnoremap +d :call CycleDiffAlgorithm(+1)<CR>
+nnoremap -d :call CycleDiffAlgorithm(-1)<CR>
 " nnoremap +e
 " nnoremap -e
 nnoremap +f :call CycleFontType(+1)<CR>
