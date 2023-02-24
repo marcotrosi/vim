@@ -1,6 +1,6 @@
 " variables <<<
-let s:ReviewFile = '.review'
-let s:CommentFile = '.comment'
+let s:ReviewFile = '.rvu'
+let s:CommentFile = '.comment' " TODO move to tmp or vim folder
 let s:SignID = 1
 " >>>
 
@@ -32,6 +32,9 @@ function! StartReview() abort " <<<
    endif
 
    let s:Data = ReadData(s:ReviewFile)
+
+   " TODO handle modified files / git <<<
+   " >>>
 
    " colors and signs <<<
    let s:red="#FB4934"

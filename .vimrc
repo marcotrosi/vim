@@ -4,11 +4,10 @@
 "   \_/ |___|_|  |_|_|_\\___|
 "                  marcotrosi
 
-
 " functions <<<
 " cycle spellcheck languages <<<
 let s:myLang = 0
-let s:myLangList = [ "en", "de", "it" ]
+let s:myLangList = ["en","de","it"]
 function! CycleSpellLang(direction)
    let s:myLang = s:myLang + a:direction
    if s:myLang >= len(s:myLangList) | let s:myLang = 0 | endif
@@ -883,8 +882,6 @@ function! VisualBlock(mod, sep)
 
    call setpos('.', l:BottomRightPos)
 
-   messages clear
-
    if l:AfterLastSep
       execute "normal " .. l:LongestLine .. "|"
    end
@@ -1271,6 +1268,306 @@ function! Asciify() range abort
 
 endfunction " >>>
 
+" list element text object <<<
+function! Element(mod) abort
+
+   " let l:PCnt = 0 " counter for parentheses
+   " let l:CCnt = 0 " counter for curly braces
+   " let l:SCnt = 0 " counter for square brackets
+   " let l:ACnt = 0 " counter for angle brackets
+   " let l:QCnt = 0 " counter for single quotes
+   " let l:DCnt = 0 " counter for double quotes
+   let l:CommaRight = v:false
+   let l:CommaLeft  = v:false
+
+   let l:Line = getline(".")
+   let l:LineLen = strlen(l:Line)
+   let l:Line ..= "\n"
+   let l:LeftVisPos = getpos("'<") " returns [bufnum, lnum, col, off]
+   let l:RightVisPos = getpos("'>")
+
+   if l:Line[l:RightVisPos[2]-1] =~ '[,({\[]'
+      let l:RightVisPos[2] = l:RightVisPos[2] + 1
+      let l:LeftVisPos[2]  = l:LeftVisPos[2]  + 1
+   elseif l:Line[l:RightVisPos[2]-1] =~ '[)}\]]' " TODO maybe go left with cursor
+      return " for now we just abort
+   endif
+
+   " right <<<
+   let l:RightPos = l:RightVisPos[2]-1
+   while l:RightPos < l:LineLen
+      if l:CommaRight " collect white spaces
+         if l:Line[l:RightPos+1] == ' ' " look at next character if white space
+            let l:RightPos = l:RightPos + 1
+            continue
+         else
+            break
+         endif
+      endif
+      if l:Line[l:RightPos+1] =~ '[)}\]]' " look at next character if end of list
+         break
+      elseif l:Line[l:RightPos+1] == ',' " look at next character if comma
+         if a:mod " around
+            let l:RightPos = l:RightPos + 1
+            let l:CommaRight = v:true
+         else " inner
+            break
+         endif
+      else
+         let l:RightPos = l:RightPos + 1
+      endif
+   endwhile
+   " >>>
+
+   " left <<<
+   let l:LeftPos = l:LeftVisPos[2]-1
+   while l:LeftPos >= 0
+      if l:CommaLeft " collect white spaces
+         if l:Line[l:LeftPos-1] == ' ' " look at previous character if white space
+            let l:LeftPos = l:LeftPos - 1
+            continue
+         else
+            break
+         endif
+      endif
+      if l:Line[l:LeftPos-1] =~ '[({\[]'
+         break
+      elseif l:Line[l:LeftPos-1] == ','
+         if a:mod
+            if l:CommaRight
+               break
+            else
+               let l:CommaLeft = v:true
+               let l:LeftPos = l:LeftPos - 1
+            endif
+         else
+            break
+         endif
+      else
+         let l:LeftPos = l:LeftPos - 1
+      endif
+   endwhile
+   " >>>
+
+   let l:LeftVisPos[2]  = l:LeftPos  + 1
+   let l:RightVisPos[2] = l:RightPos + 1
+
+   call setpos('.', l:LeftVisPos)
+
+   normal v
+
+   call setpos('.', l:RightVisPos)
+
+endfunction
+" (super,bar,foo)
+" { bar, super ,   foo   }
+" [ bar, foo,    super ]
+xnoremap ao :<C-U>call Element(1)<CR>
+xnoremap io :<C-U>call Element(0)<CR>
+onoremap ao :normal vao<CR>
+onoremap io :normal vio<CR>
+" >>>
+
+" shift list element <<<
+function! ShiftElement(direction) abort
+   if getline('.')[col('.')-1] =~ '[,\]})]'
+      normal h
+   elseif getline('.')[col('.')-1] =~ '[\[{(]'
+      normal l
+   end
+   let l:CursorPos = getcurpos()
+   let l:CursorCol = l:CursorPos[2]
+   let l:Search=getreg("/")
+   if a:direction
+      let l:Pattern='\v(.*[,\[\(\{])([^,]*),([^,]*%'.. l:CursorCol ..'c[^,]*)([,\]\)\}])'
+      let l:Matches=matchlist(getline('.'), l:Pattern)
+      execute 'silent! s/'..l:Pattern..'/\1\3,\2\4/'
+      let l:Two = strlen(l:Matches[2])
+      let l:NewCursorCol = l:CursorCol - l:Two - 1
+   else
+      let l:Pattern='\v(.*[,\[\(\{])([^,]*%'.. l:CursorCol ..'c[^,]*),([^,]*)([,\]\)\}])'
+      let l:Matches=matchlist(getline('.'), l:Pattern)
+      execute 'silent! s/'..l:Pattern..'/\1\3,\2\4/'
+      let l:Three = strlen(l:Matches[3])
+      let l:NewCursorCol = l:CursorCol + l:Three + 1
+   endif
+   execute "normal " .. l:NewCursorCol .. "|"
+   call setreg("/", l:Search)
+endfunction
+nnoremap gh :call ShiftElement(1)<CR>
+nnoremap gl :call ShiftElement(0)<CR>
+" >>>
+
+" set up scripts <<<
+if has("win32")
+   " let s:ChangeDirCmd = '/Users/marcotrosi/Code/release/bin/c.sh'
+   " let s:ChangeDirTmp = '/tmp/c.tmp'
+else
+   let s:ChangeDirCmd    = '/Users/marcotrosi/.vim/bin/c.sh'
+   let s:ChangeDirTmp    = '/tmp/c.tmp'
+   let s:EditFilesCmd    = '/Users/marcotrosi/.vim/bin/e.sh'
+   let s:EditFilesTmp    = '/tmp/e.tmp'
+   let s:PasteRegCmd     = '/Users/marcotrosi/.vim/bin/r.sh'
+   let s:PasteRegTmp     = '/tmp/r.tmp'
+   let s:PasteRegPreTmp  = '/tmp/r_pre.tmp'
+   let s:SelectBufCmd    = '/Users/marcotrosi/.vim/bin/b.sh'
+   let s:SelectBufTmp    = '/tmp/b.tmp'
+   let s:SelectBufPreTmp = '/tmp/b_pre.tmp'
+endif
+" >>>
+
+" change directory <<<
+" command! -nargs=? CD call system('start /wait cmd /c "fd -t d '.<q-args>.' | fzf --reverse > D:\temp\fzf.out || del D:\temp\fzf.out"') | if filereadable('D:\temp\fzf.out') | call chdir(readfile('D:\temp\fzf.out', '', 1)[0]) | endif
+function! ChangeDir(j, s)
+   if filereadable(s:ChangeDirTmp)
+      call chdir(readfile(s:ChangeDirTmp, '', 1)[0])
+   endif
+endfunction
+
+function! CD()
+   let l:TermBufNum = term_start(s:ChangeDirCmd, {'term_name':'change directory', 'hidden':0, 'term_finish':'close', 'norestore':1, 'vertical':1, 'exit_cb':'ChangeDir'})
+   " let l:WinID = popup_create(l:TermBufNum, {'minwidth': 50, 'minheight': 20})
+endfunction
+
+command! -nargs=? CD call CD()
+" >>>
+
+" edit files <<<
+" command! -nargs=? Edit call system('start /wait cmd /c "fd -t f '.<q-args>.' | fzf -m --reverse > D:\temp\fzf.out || del D:\temp\fzf.out"') | if filereadable('D:\temp\fzf.out') | for fname in readfile('D:\temp\fzf.out') | silent execute ':e ' . fname | endfor | endif
+function! EditFiles(j, s)
+   wincmd p
+   for fname in readfile(s:EditFilesTmp) 
+      silent execute ':e ' . fname
+   endfor
+endfunction
+
+function! Edit()
+   let l:TermBufNum = term_start(s:EditFilesCmd, {'term_name':'edit files', 'hidden':0, 'term_finish':'close', 'norestore':1, 'vertical':1, 'exit_cb':'EditFiles'})
+   " let l:WinID = popup_create(l:TermBufNum, {'minwidth': 50, 'minheight': 20})
+endfunction
+
+command! -nargs=? Edit call Edit()
+" >>>
+
+" paste register <<<
+function! PasteReg(direction)
+   let l:Cmds = []
+   let l:PasteRegDirection = a:direction
+   let l:WinID = 0
+
+   function! PasteRegCallback(job, status) closure
+      if filereadable(s:PasteRegTmp)
+         call add(l:Cmds, 'wincmd p')
+         let l:Cmd = 'norm "' . readfile(s:PasteRegTmp, '', 1)[0][0] . l:PasteRegDirection
+         call add(l:Cmds, l:Cmd)
+         for cmd in l:Cmds
+            execute cmd
+         endfor
+      endif
+   endfunction
+
+   execute 'silent redir! > ' . s:PasteRegPreTmp
+   registers
+   redir END
+
+   let l:TermBufNum = term_start(s:PasteRegCmd, {'term_name':'paste register', 'hidden':0, 'term_finish':'close', 'norestore':1, 'vertical':1, 'exit_cb':'PasteRegCallback'})
+   " let l:WinID = popup_create(l:TermBufNum, {'minwidth': 50, 'minheight': 20})
+endfunction " >>>
+
+" diff registers <<<
+function DiffReg(regl, regr)
+   let l:Left = '/tmp/left.txt'
+   let l:Right = '/tmp/right.txt'
+   call writefile(getreg(a:regl, 1, 1), l:Left)
+   call writefile(getreg(a:regr, 1, 1), l:Right)
+   execute 'tabedit ' .. l:Right
+   execute 'diffsplit ' .. l:Left
+endfunction
+" >>>
+
+" yank search matches <<<
+function! YankSearchMatches(reg)
+   let l:SearchMatches = []
+   %s//\=len(add(l:SearchMatches, submatch(0)))/gne
+   let l:Register = empty(a:reg) ? '"' : a:reg
+   call setreg(l:Register, l:SearchMatches, "l")
+endfunction
+">>>
+
+" eval digraph <<<
+function! EvalDigraph()
+   normal vhx
+   exec "normal a" .. getreg('"')
+endfunction
+" >>>
+
+" silicon <<<
+function! Silicon()
+   '<,'>yank *
+   exec "silent !silicon --from-clipboard --to-clipboard --theme 'gruvbox-dark' --background '\\#D6D6D6' --shadow-blur-radius 5 --shadow-offset-x 10 --shadow-offset-y 8 --pad-horiz 40 --pad-vert 40 --language " .. &filetype
+   redraw!
+endfunction
+" >>>
+
+" select buffer <<<
+function! SelectBuf()
+
+   let l:Cmds = []
+   let l:NumOfBuffers = bufnr('$')
+   let l:Buffers = []
+   " let SelectedBuffer = ''
+
+   function! SelectBufCallback(job, status) closure
+
+      if filereadable(s:SelectBufTmp)
+
+         call add(l:Cmds, 'wincmd p')
+         let l:Cmd = 'b' . matchstr(readfile(s:SelectBufTmp, '', 1)[0], '^\d\+')
+         " let SelectedBuffer = matchstr(readfile(s:SelectBufTmp, '', 1)[0], '^\d\+')
+         call add(l:Cmds, l:Cmd)
+         for cmd in l:Cmds
+            execute cmd
+         endfor
+      endif
+   endfunction
+
+   let l:i = 0 | while l:i <= l:NumOfBuffers | let l:i = l:i + 1
+      if buflisted(l:i)
+         call add(l:Buffers, l:i . " " . bufname(l:i))
+      endif
+   endwhile
+   call writefile(l:Buffers, s:SelectBufPreTmp)
+
+   let l:TermBufNum = term_start(s:SelectBufCmd, {'term_name':'select buffer', 'hidden':0, 'term_finish':'close', 'norestore':1, 'vertical':1, 'exit_cb':'SelectBufCallback'})
+   " let l:WinID = popup_create(l:TermBufNum, {'minwidth': 50, 'minheight': 20})
+   " execute "b"..SelectedBuffer
+endfunction
+" >>>
+
+" edit old files <<<
+let s:OldFilesPre = '/tmp/o_pre.tmp'
+let s:OldFilesSel = '/tmp/o.tmp'
+let s:OldFilesCmd = '/Users/marcotrosi/.vim/bin/o.sh'
+
+function! EditOldFiles(j, s)
+   echom "edit callback"
+   wincmd p
+   if !filereadable(s:OldFilesSel) 
+      return
+   endif
+   for fname in readfile(s:OldFilesSel) 
+      silent execute ':e ' . substitute(fname,'^\d\+:\ ','','')
+   endfor
+endfunction
+
+function! OldFiles()
+   execute 'redir! > ' . s:OldFilesPre
+   silent oldfiles
+   redir END
+   let l:TermBufNum = term_start(s:OldFilesCmd, {'term_name':'old files', 'hidden':0, 'term_finish':'close', 'norestore':1, 'vertical':1, 'exit_cb':'EditOldFiles'})
+endfunction
+" >>>
+
 " UNDER DEVELOPMENT <<<
 " get misspelled words <<<
 function! GetMisspelledWords1() " <<<
@@ -1390,15 +1687,6 @@ endfunction " >>>
 
 nnoremap z, :call QuickfixMisspelledWords()<CR>
 nnoremap z; :cdo normal 1z=<CR>
-" >>>
-" Test Color <<<
-"let g:Color = 0
-" function! TestColor()
-"    execute "hi Normal ctermbg=" . g:Color
-"    execute "hi NonText ctermbg=" . g:Color
-"    let g:Color=g:Color+1
-" endfunction
-" nnoremap +c :call TestColor()<CR>:echo g:Color<CR>
 " >>>
 " User Completion <<<
 function! GetWords(String)
@@ -1808,75 +2096,12 @@ function! HighlightTags()
       endif
    endfor
 endfunction " >>>
-" diff registers <<<
-function DiffReg(regl, regr)
-   let l:Left = '/tmp/left.txt'
-   let l:Right = '/tmp/right.txt'
-   call writefile(getreg(a:regl, 1, 1), l:Left)
-   call writefile(getreg(a:regr, 1, 1), l:Right)
-   execute 'tabedit ' .. l:Right
-   execute 'diffsplit ' .. l:Left
-endfunction
-
-command! -nargs=* DiffReg call DiffReg(<f-args>)
-" >>>
 " git functions <<<
 " git get branch <<<
 function! GitGetBranch()
    let l:branchName = system("git rev-parse --abbrev-ref HEAD 2>/dev/null | tr -d '\n'")
    return l:branchName
 endfunction " >>>
-" >>>
-" edit old files <<<
-let s:OldFilesPre = '/tmp/o_pre.tmp'
-let s:OldFilesSel = '/tmp/o.tmp'
-let s:OldFilesCmd = '/Users/marcotrosi/.vim/bin/o.sh'
-
-function! EditOldFiles(j, s)
-   echom "edit callback"
-   wincmd p
-   if !filereadable(s:OldFilesSel) 
-      return
-   endif
-   for fname in readfile(s:OldFilesSel) 
-      silent execute ':e ' . substitute(fname,'^\d\+:\ ','','')
-   endfor
-endfunction
-
-function! OldFiles()
-   execute 'redir! > ' . s:OldFilesPre
-   silent oldfiles
-   redir END
-   let l:TermBufNum = term_start(s:OldFilesCmd, {'term_name':'old files', 'hidden':0, 'term_finish':'close', 'norestore':1, 'vertical':1, 'exit_cb':'EditOldFiles'})
-endfunction
-
-command! OldFiles call OldFiles()
-nnoremap <SPACE>o :OldFiles<CR>
-" >>>
-" yank search matches <<<
-function! YankSearchMatches(reg)
-   let l:SearchMatches = []
-   %s//\=len(add(l:SearchMatches, submatch(0)))/gne
-   let l:Register = empty(a:reg) ? '"' : a:reg
-   call setreg(l:Register, l:SearchMatches, "l")
-endfunction
-command! -register YankSearchMatches call YankSearchMatches(<q-reg>)
-">>>
-" eval digraph <<<
-function! EvalDigraph()
-   normal vhx
-   exec "normal a" .. getreg('"')
-endfunction
-inoremap <S-SPACE> <ESC>:call EvalDigraph()<CR>a
-" >>>
-" silicon <<<
-function! Silicon()
-   '<,'>yank *
-   exec "silent !silicon --from-clipboard --to-clipboard --theme gruvbox --background '\\#D6D6D6' --shadow-blur-radius 5 --shadow-offset-x 10 --shadow-offset-y 8 --pad-horiz 40 --pad-vert 40 --language " .. &filetype
-   redraw!
-endfunction
-command! -range Silicon call Silicon()
-xnoremap SS :Silicon<CR>
 " >>>
 " menu <<<
 let g:MenuUsePopup = v:false
@@ -1962,116 +2187,10 @@ command! F silent! !open .
 command! SD let g:SD=getcwd()
 command! RD call chdir(g:SD)
 command! -nargs=1 MKCD call mkdir(<f-args>, "p") | call chdir(<f-args>)
-
-" set up scripts <<<
-if has("win32")
-   " let s:ChangeDirCmd = '/Users/marcotrosi/Code/release/bin/c.sh'
-   " let s:ChangeDirTmp = '/tmp/c.tmp'
-else
-   let s:ChangeDirCmd    = '/Users/marcotrosi/.vim/bin/c.sh'
-   let s:ChangeDirTmp    = '/tmp/c.tmp'
-   let s:EditFilesCmd    = '/Users/marcotrosi/.vim/bin/e.sh'
-   let s:EditFilesTmp    = '/tmp/e.tmp'
-   let s:PasteRegCmd     = '/Users/marcotrosi/.vim/bin/r.sh'
-   let s:PasteRegTmp     = '/tmp/r.tmp'
-   let s:PasteRegPreTmp  = '/tmp/r_pre.tmp'
-   let s:SelectBufCmd    = '/Users/marcotrosi/.vim/bin/b.sh'
-   let s:SelectBufTmp    = '/tmp/b.tmp'
-   let s:SelectBufPreTmp = '/tmp/b_pre.tmp'
-endif
-" >>>
-
-" change directory <<<
-" command! -nargs=? CD call system('start /wait cmd /c "fd -t d '.<q-args>.' | fzf --reverse > D:\temp\fzf.out || del D:\temp\fzf.out"') | if filereadable('D:\temp\fzf.out') | call chdir(readfile('D:\temp\fzf.out', '', 1)[0]) | endif
-function! ChangeDir(j, s)
-   if filereadable(s:ChangeDirTmp)
-      call chdir(readfile(s:ChangeDirTmp, '', 1)[0])
-   endif
-endfunction
-
-function! CD()
-   let l:TermBufNum = term_start(s:ChangeDirCmd, {'term_name':'change directory', 'hidden':0, 'term_finish':'close', 'norestore':1, 'vertical':1, 'exit_cb':'ChangeDir'})
-   " let l:WinID = popup_create(l:TermBufNum, {'minwidth': 50, 'minheight': 20})
-endfunction
-
-command! -nargs=? CD call CD()
-" >>>
-
-" edit files <<<
-" command! -nargs=? Edit call system('start /wait cmd /c "fd -t f '.<q-args>.' | fzf -m --reverse > D:\temp\fzf.out || del D:\temp\fzf.out"') | if filereadable('D:\temp\fzf.out') | for fname in readfile('D:\temp\fzf.out') | silent execute ':e ' . fname | endfor | endif
-function! EditFiles(j, s)
-   wincmd p
-   for fname in readfile(s:EditFilesTmp) 
-      silent execute ':e ' . fname
-   endfor
-endfunction
-
-function! Edit()
-   let l:TermBufNum = term_start(s:EditFilesCmd, {'term_name':'edit files', 'hidden':0, 'term_finish':'close', 'norestore':1, 'vertical':1, 'exit_cb':'EditFiles'})
-   " let l:WinID = popup_create(l:TermBufNum, {'minwidth': 50, 'minheight': 20})
-endfunction
-
-command! -nargs=? Edit call Edit()
-" >>>
-
-" paste register <<<
-function! PasteReg(direction)
-   let l:Cmds = []
-   let l:PasteRegDirection = a:direction
-   let l:WinID = 0
-
-   function! PasteRegCallback(job, status) closure
-      if filereadable(s:PasteRegTmp)
-         call add(l:Cmds, 'wincmd p')
-         let l:Cmd = 'norm "' . readfile(s:PasteRegTmp, '', 1)[0][0] . l:PasteRegDirection
-         call add(l:Cmds, l:Cmd)
-         for cmd in l:Cmds
-            execute cmd
-         endfor
-      endif
-   endfunction
-
-   execute 'silent redir! > ' . s:PasteRegPreTmp
-   registers
-   redir END
-
-   let l:TermBufNum = term_start(s:PasteRegCmd, {'term_name':'paste register', 'hidden':0, 'term_finish':'close', 'norestore':1, 'vertical':1, 'exit_cb':'PasteRegCallback'})
-   " let l:WinID = popup_create(l:TermBufNum, {'minwidth': 50, 'minheight': 20})
-endfunction " >>>
-
-function! SelectBuf() " <<<
-
-   let l:Cmds = []
-   let l:NumOfBuffers = bufnr('$')
-   let l:Buffers = []
-   " let SelectedBuffer = ''
-
-   function! SelectBufCallback(job, status) closure
-
-      if filereadable(s:SelectBufTmp)
-
-         call add(l:Cmds, 'wincmd p')
-         let l:Cmd = 'b' . matchstr(readfile(s:SelectBufTmp, '', 1)[0], '^\d\+')
-         " let SelectedBuffer = matchstr(readfile(s:SelectBufTmp, '', 1)[0], '^\d\+')
-         call add(l:Cmds, l:Cmd)
-         for cmd in l:Cmds
-            execute cmd
-         endfor
-      endif
-   endfunction
-
-   let l:i = 0 | while l:i <= l:NumOfBuffers | let l:i = l:i + 1
-      if buflisted(l:i)
-         call add(l:Buffers, l:i . " " . bufname(l:i))
-      endif
-   endwhile
-   call writefile(l:Buffers, s:SelectBufPreTmp)
-
-   let l:TermBufNum = term_start(s:SelectBufCmd, {'term_name':'select buffer', 'hidden':0, 'term_finish':'close', 'norestore':1, 'vertical':1, 'exit_cb':'SelectBufCallback'})
-   " let l:WinID = popup_create(l:TermBufNum, {'minwidth': 50, 'minheight': 20})
-   " execute "b"..SelectedBuffer
-endfunction
-" >>>
+command! -nargs=+ DiffReg call DiffReg(<f-args>)
+command! OldFiles call OldFiles()
+command! -register YankSearchMatches call YankSearchMatches(<q-reg>)
+command! -range Silicon call Silicon()
 " >>>
 
 " settings <<<
@@ -2093,7 +2212,6 @@ set nottimeout
 set novisualbell
 set nowrap
 " >>>
-
 " on <<<
 filetype on
 filetype plugin on
@@ -2118,7 +2236,6 @@ set termguicolors
 set title
 " set undofile
 " >>>
-
 " values <<<
 language en_US.UTF-8
 let g:TabSpace=3
@@ -2144,7 +2261,7 @@ set errorformat+=%f\ %l\ %m
 set fillchars=vert:│,fold:─
 set foldmarker=<<<,>>>
 set foldmethod=marker
-set formatoptions=jlqr
+set formatoptions=jlnqr
 set grepprg=rg\ --vimgrep\ $*
 set grepformat=%f:%l:%c:%m
 set keywordprg=:help
@@ -2191,7 +2308,6 @@ else
    set noscrollbind
 endif
 " >>>
-
 " auto commands <<<
 augroup VIMRC
 
@@ -2222,7 +2338,6 @@ augroup VIMRC
 
 augroup END
 " >>>
-
 " plugin settings <<<
 " colorizer <<<
 let g:colorizer_auto_color = 0
@@ -2400,6 +2515,7 @@ nnoremap öw :w!<CR>
 nnoremap öd :bd!<CR>
 nnoremap öD :silent %bd<BAR>e#<CR>
 nnoremap öu :e!<CR>
+nnoremap <SPACE>o :OldFiles<CR>
 " >>>
 " Vimrc <<<
 nnoremap öv :e  $MYVIMRC<CR>
@@ -2673,6 +2789,7 @@ nnoremap öc :call PanelClose()<CR>
 nnoremap zq :qa!<CR>
 nnoremap cq :%s///gn<CR>
 nnoremap cQ :%s///gn<CR>
+inoremap <S-SPACE> <ESC>:call EvalDigraph()<CR>a
 nnoremap <S-SPACE> i<SPACE><ESC>l
 nnoremap <S-CR> o<ESC>0D
 nnoremap g<CR> r<CR>kddpk==
@@ -2693,16 +2810,17 @@ inoremap <S-TAB> <C-v><TAB>
 vnoremap <expr> <C-u> mode() ==? "\<C-v>" ? ':Left<CR>'   : ':left<CR>'
 vnoremap <expr> <C-n> mode() ==? "\<C-v>" ? ':Center<CR>' : ':center<CR>'
 vnoremap <expr> <C-i> mode() ==? "\<C-v>" ? ':Right<CR>'  : ':right<CR>'
+
+xnoremap <expr> A mode() !=# "\<C-v>" ? '<C-v>$A' : 'A'
+xnoremap <expr> I mode() !=# "\<C-v>" ? '<C-v>0I' : 'I'
+
+xnoremap S :Silicon<CR>
 " >>>
 " UNDER DEVELOPMENT <<<
 " nnoremap <nowait> \r :Review<CR>
 " nnoremap <expr> <CR> 'm`' . v:count1 . "GO<ESC>0D``"
 " nnoremap öL :call LaTeXMenu("viw")<CR>
 " xnoremap öL :call LaTeXMenu("gv")<CR>
-
-xnoremap <expr> A mode() !=# "\<C-v>" ? '<C-v>$A' : 'A'
-xnoremap <expr> I mode() !=# "\<C-v>" ? '<C-v>0I' : 'I'
-
 " augroup COMPLETE
 "    autocmd!
 "    autocmd CompleteDone <buffer> call LatexFontContinue()
@@ -2711,51 +2829,49 @@ xnoremap <expr> I mode() !=# "\<C-v>" ? '<C-v>0I' : 'I'
 " >>>
 
 " menus <<<
-" reduce duplicate lines
+" reduce duplicate lines <<<
 nmenu &Utils.Red&DuplLines :%s;^\(.*\)\(\n\1\)\+$;\1;<CR>
 vmenu &Utils.Red&DuplLines :s;^\(.*\)\(\n\1\)\+$;\1;<CR>
-
-" delete empty lines
+" >>>
+" delete empty lines <<<
 nmenu &Utils.Del&EmptyLines :g/^\s*$/d<CR>
 vmenu &Utils.Del&EmptyLines :g/^\s*$/d<CR>
-
-" reduce emtpy lines
+" >>>
+" reduce emtpy lines <<<
 nmenu &Utils.&RedEmptyLines :g/^$/,/./-j<CR>
 vmenu &Utils.&RedEmptyLines :g/^$/,/./-j<CR>
 "nmenu &Utils.&RedEmptyLines :%s;^\(\s*\)\(\n\1\)\+$;\1;<CR>
 "vmenu &Utils.&RedEmptyLines :s;^\(\s*\)\(\n\1\)\+$;\1;<CR>
-
-" strip
+" >>>
+" strip <<<
 nmenu &Utils.&StripLines :%s;^\s*\(.\{-}\)\s*$;\1;<CR>
 vmenu &Utils.&StripLines :s;^\s*\(.\{-}\)\s*$;\1;<CR>
-
-" strip right
+" >>>
+" strip right <<<
 nmenu &Utils.StripLines&Right :%s;\s\+$;;<CR>
 xmenu &Utils.StripLines&Right :s;\s\+$;;<CR>
-
-" strip left
+" >>>
+" strip left <<<
 nmenu &Utils.StripLines&Left :%s;^\s\+;;<CR>
 vmenu &Utils.StripLines&Left :s;^\s\+;;<CR>
-
-" reverse lines 
+" >>>
+" reverse lines <<<
 nmenu &Utils.&RevLines :g/^/m0<CR>
 vmenu &Utils.&RevLines :call RevSelLines()<CR>
-
-" forward backward slashes
+" >>>
+" forward backward slashes <<<
 nmenu &Utils.&BackSlash2Slash :%s;\\;/;ge<CR>
 nmenu &Utils.&Slash2BackSlash :%s;/;\\;ge<CR>
 vmenu &Utils.&BackSlash2Slash :s;\\;/;ge<CR>
 vmenu &Utils.&Slash2BackSlash :s;/;\\;ge<CR>
-
-" hex, binary, octal, decimal, ... 
+" >>>
 " >>>
 
 " OS|GUI|Term dependent settings <<<
-
 " Windows <<<
 if has("win32")
 
-   command P call chdir('D:\p')
+   command P call chdir('D:\casdef\td5')
 
    " let  FD=$VIM . '\vimfiles\bin\fd.exe'
    " let  RG=$VIM . '\vimfiles\bin\rg.exe'
@@ -2797,7 +2913,6 @@ else " all Unixoids
 
 
 endif " >>>
-
 " macOS <<<
 if has("macunix")
 
@@ -2825,14 +2940,12 @@ if has("macunix")
    endif
 
 endif " >>>
-
 " Linux <<<
 if has("unix")
    if has("gui_running")
    else
    endif
 endif " >>>
-
 " Cygwin <<<
 if has("win32unix")
 
@@ -2860,7 +2973,6 @@ if has("win32unix")
    endif
 
 endif " >>>
-
 " GUI vs. Term <<<
 if has("gui_running")
 
@@ -2935,13 +3047,17 @@ else
    " hi Match8 ctermfg=White ctermbg=9
    " hi Match9 ctermfg=White ctermbg=10
 
-endif " >>>
+endif
 
 " hi DiffAdd    ctermfg=White ctermbg=1 guifg=White guibg=grey62
 " hi DiffChange ctermfg=White ctermbg=1 guifg=White guibg=grey62
 " hi DiffDelete ctermfg=White ctermbg=1 guifg=White guibg=grey62
 " hi DiffText   ctermfg=White ctermbg=1 guifg=White guibg=grey62
 
+" >>>
+" >>>
+
+" statusline <<<
 set statusline=%#SLOrg#CD=%#SLNrm#%{getcwd()}%=\ 
 " set statusline+=%#SLBlu#FONT=%#SLNrm#%{GetMyFont()}\ 
 set statusline+=%#SLYlw#SESSION=%#SLNrm#%{GetFileName(v:this_session)}\ 
