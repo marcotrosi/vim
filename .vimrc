@@ -2078,8 +2078,11 @@ function! RunScript() abort
       endfor
    endif
    " run script
-   call term_sendkeys(l:TermBufNr, l:Interpreters[l:FileExt] .. " " .. l:FilePath .."\n") " use \r on macos
-endfunction " >>>
+   sleep 100m
+   call term_sendkeys(l:TermBufNr, l:Interpreters[l:FileExt] .. " " .. l:FilePath .. "\r") " use \r on macos
+endfunction
+command! Run call RunScript()
+" >>>
 " highlight tags <<<
 " so $VIMRUNTIME/syntax/hitest.vim
 function! HighlightTags()
@@ -2273,6 +2276,7 @@ set pastetoggle=ä<SPACE>
 set path=.,,** " use :checkpath
 set scrolloff=10
 set sessionoptions=buffers,curdir
+set shell=/usr/local/bin/bash
 set shortmess=fIlmnxtToO
 set spelllang=en
 set spellsuggest=best,9
