@@ -1441,12 +1441,12 @@ function! EditFiles(j, s)
    endfor
 endfunction
 
-function! Edit()
-   let l:TermBufNum = term_start(s:EditFilesCmd, {'term_name':'edit files', 'hidden':0, 'term_finish':'close', 'norestore':1, 'vertical':1, 'exit_cb':'EditFiles'})
+function! Edit(params)
+   let l:TermBufNum = term_start(s:EditFilesCmd .. " " .. a:params, {'term_name':'edit files', 'hidden':0, 'term_finish':'close', 'norestore':1, 'vertical':1, 'exit_cb':'EditFiles'})
    " let l:WinID = popup_create(l:TermBufNum, {'minwidth': 50, 'minheight': 20})
 endfunction
 
-command! -nargs=? Edit call Edit()
+command! -nargs=? Edit call Edit(<q-args>)
 " >>>
 
 " paste register <<<
@@ -1504,7 +1504,7 @@ endfunction
 " silicon <<<
 function! Silicon()
    '<,'>yank *
-   exec "silent !silicon --from-clipboard --to-clipboard --theme 'gruvbox-dark' --background '\\#D6D6D6' --shadow-blur-radius 5 --shadow-offset-x 10 --shadow-offset-y 8 --pad-horiz 40 --pad-vert 40 --language " .. &filetype
+   exec "silent !silicon --from-clipboard --to-clipboard --theme 'gruvbox-dark' --background '#D6D6D6' --shadow-blur-radius 5 --shadow-offset-x 10 --shadow-offset-y 8 --pad-horiz 40 --pad-vert 40 --language " .. &filetype
    redraw!
 endfunction
 " >>>
@@ -2169,6 +2169,57 @@ endfunction
 command! Menu call Menu()
 nnoremap M :Menu<CR>
 " >>>
+" delete loclist entry <<<
+function! CreateLocListMappings()
+   nnoremap dd :call DeleteLocListEntry()<CR>
+endfunction
+function! DeleteLocListMappings()
+   silent! nunmap dd
+endfunction
+function! DeleteLocListEntry()
+   if getwininfo(win_getid())[0]['loclist']
+      let l:List = getloclist(0)
+      call remove(l:List, line('.')-1)
+      call setloclist(0, l:List, 'r')
+   endif
+endfunction
+" >>>
+" for each match in line execute command <<<
+function! ForEach(reverse, parameter) abort
+   let l:CmdIdx  = matchend(a:parameter, a:parameter[0] .. '.*' .. a:parameter[0]) " FIXME
+   let l:Pattern = strpart(a:parameter, 1, CmdIdx-2)
+   if l:Pattern == ""
+      let l:Pattern = @/
+   endif
+   let l:Command = strpart(a:parameter, CmdIdx)
+   let l:Line = getline('.')
+   let l:Matches = []
+   let l:Match = ""
+   let l:Start = 0
+   let l:End   = 0
+   while v:true
+      let l:Result = matchstrpos(l:Line, l:Pattern, l:Start)
+      let l:Match  = l:Result[0]
+      let l:Start  = l:Result[1]
+      let l:End    = l:Result[2]
+      if l:Match == ""
+         break
+      endif
+      if a:reverse == ""
+         call add(l:Matches   , {'string':l:Match, 'line':line('.'), 'column':l:Start+1})
+      else
+         call insert(l:Matches, {'string':l:Match, 'line':line('.'), 'column':l:Start+1})
+      endif
+      let l:Start = l:End + 1
+   endwhile
+   for item in l:Matches
+      call cursor(item['line'], item['column'])
+      let l:Exec = substitute(l:Command, '%s', item['string'], 'g') "FIXME
+      execute l:Exec
+   endfor
+endfunction
+command! -nargs=+ -bang G call ForEach(<q-bang>, <q-args>)
+" >>>
 " >>>
 " >>>
 
@@ -2177,7 +2228,7 @@ command! -range Left   call AlignBlock('l')
 command! -range Center call AlignBlock('c')
 command! -range Right  call AlignBlock('r')
 command! -nargs=1 EditReg call EditReg(<f-args>)
-command! -bang -range -nargs=? Join <line1>,<line2>call Join("<bang>", <f-args>)
+command! -bang -range -nargs=? Join <line1>,<line2>call Join(<q-bang>, <f-args>)
 command! -range -nargs=* ReArrangeColumns <line1>,<line2>call ReArrangeColumns(<f-args>)
 command! -nargs=* Grep call Grep('<args>')
 command! -nargs=* GrepBuffers call GrepBuffers('<args>')
@@ -2339,6 +2390,11 @@ augroup VIMRC
 
    autocmd CmdwinEnter * map <buffer> <S-CR> <C-c><C-e>
    autocmd FileType help nnoremap <buffer> q :helpclose<cr>
+
+   autocmd WinEnter * if &buftype == 'quickfix' | call CreateLocListMappings() | endif
+   autocmd BufWinEnter quickfix call CreateLocListMappings()
+   autocmd WinLeave * if &buftype == 'quickfix' | call DeleteLocListMappings() | endif
+   autocmd BufWinLeave quickfix call DeleteLocListMappings()
 
 augroup END
 " >>>
@@ -2829,6 +2885,10 @@ xnoremap S :Silicon<CR>
 "    autocmd!
 "    autocmd CompleteDone <buffer> call LatexFontContinue()
 " augroup END
+xnoremap am <ESC>f)v%b
+xnoremap im <ESC>f)v%b
+onoremap am :normal vam<CR>
+onoremap im :normal vim<CR>
 " >>>
 " >>>
 
@@ -3063,7 +3123,6 @@ endif
 
 " statusline <<<
 set statusline=%#SLOrg#CD=%#SLNrm#%{getcwd()}%=\ 
-" set statusline+=%#SLBlu#FONT=%#SLNrm#%{GetMyFont()}\ 
 set statusline+=%#SLYlw#SESSION=%#SLNrm#%{GetFileName(v:this_session)}\ 
 set statusline+=%#SLRed#\ PERM=%#SLNrm#%{getfperm(expand('%'))}\ 
 set statusline+=%#SLRed#FORMAT=%#SLNrm#%{&ff}\ 
@@ -3073,6 +3132,18 @@ set statusline+=%#SLGrn#LINE=%#SLNrm#%l/%L(%p%%)\
 set statusline+=%#SLGrn#COL=%#SLNrm#%v\ 
 set statusline+=%#SLGrn#BYTE=%#SLNrm#%o\ 
 set statusline+=%#SLBlu#XTAB=%#SLNrm#%{&expandtab}\ 
+
+" function! GetGitBranch()
+"    if isdirectory("./.git/")
+"       let g:GitBranch = trim(system("git branch --show-current"))
+"    else
+"       let g:GitBranch = "n.a."
+"    end
+" endfunction
+" autocmd DirChanged * call GetGitBranch()
+" call GetGitBranch()
+" set statusline+=%#SLBlu#BRANCH=%#SLNrm#%{g:GitBranch}
+" set statusline+=%#SLBlu#FONT=%#SLNrm#%{GetMyFont()}\ 
 
 " set statusline=%#org#CD=%#wht#%{getcwd()}%=%#ylw#SESSION=%#wht#%{GetFileName(v:this_session)}%#red#\ PERM=%#wht#%{getfperm(expand('%'))}\ %#red#FORMAT=%#wht#%{&ff}\ %#red#TYPE=%#wht#%Y\ %#ppl#SPELL=%#wht#%{&spelllang}\ %#grn#LINE=%#wht#%l/%L(%p%%)\ %#grn#COL=%#wht#%v\ %#grn#BYTE=%#wht#%o\ %#blu#DEC=%#wht#\%b\ %#blu#HEX=%#wht#\%B\ 
 " set statusline=%#org#Clip=%#wht#%{ShortenString(getreg('\"'),30,'r')}%=%#red#\ PERM=%#wht#%{getfperm(expand('%'))}\ %#red#FORMAT=%#wht#%{&ff}\ %#red#TYPE=%#wht#%Y\ \ %#ppl#SPELL=%#wht#%{&spelllang}\ \ %#grn#LINE=%#wht#%l/%L(%p%%)\ %#grn#COL=%#wht#%v\ %#grn#BYTE=%#wht#%o\ \ %#blu#DEC=%#wht#\%b\ %#blu#HEX=%#wht#\%B\ 
