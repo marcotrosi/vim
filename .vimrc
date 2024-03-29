@@ -5,6 +5,16 @@
 "                  marcotrosi
 
 " functions <<<
+" set list index <<<
+function! SetListIndex(list, index, value, empty)
+    let l:length = len(a:list)
+    while l:length <= a:index
+        call add(a:list, a:empty)
+        let l:length += 1
+    endwhile
+    let a:list[a:index] = a:value
+endfunction " >>>
+
 " cycle spellcheck languages <<<
 let s:myLang = 0
 let s:myLangList = ["en","de","it"]
@@ -2220,6 +2230,75 @@ function! ForEach(reverse, parameter) abort
 endfunction
 command! -nargs=+ -bang G call ForEach(<q-bang>, <q-args>)
 " >>>
+" set vartabstop <<<
+let s:VarTabs = []
+
+function VarTabDetermineTabs() range
+   let s:VarTabs = []
+   let l:LineNum = a:firstline
+   while v:true
+      if l:LineNum > a:lastline
+         break
+      end
+      let l:Columns = split(getline(l:LineNum), "\t", 1)
+      let l:Index = 0
+      for c in l:Columns
+         call SetListIndex(s:VarTabs, l:Index, max([get(s:VarTabs,l:Index,0), strlen(c)+1]), 0)
+         let l:Index = l:Index + 1
+      endfor
+      let l:LineNum = l:LineNum + 1
+   endwhile
+   call VarTabSetValues()
+endfunction
+
+function VarTabDetermineColumn()
+   let l:Line   = getline('.')
+   let l:CurCol = getpos('.')[2]
+   let l:Column = 0
+   let l:ColCnt = 1
+   for c in l:Line
+      if l:ColCnt >= l:CurCol
+         break
+      endif
+      if c == "\t"
+         let l:Column = l:Column + 1
+      endif
+      let l:ColCnt = l:ColCnt + 1
+   endfor
+   return l:Column
+endfunction
+
+function VarTabSetValues()
+   call execute("set vartabstop=" .. join(s:VarTabs,','))
+endfunction
+
+function VarTabIncreaseColumn(count)
+     let l:Column = VarTabDetermineColumn()
+     let s:VarTabs[l:Column] = s:VarTabs[l:Column] + a:count
+     call VarTabSetValues()
+endfunction
+
+function VarTabDecreaseColumn(count)
+     let l:Column = VarTabDetermineColumn()
+     let s:VarTabs[l:Column] = s:VarTabs[l:Column] - a:count
+     if s:VarTabs[l:Column] < 1
+      let s:VarTabs[l:Column] = 1
+     end
+     call VarTabSetValues()
+endfunction
+
+function VarTabClearTabs()
+   let s:VarTabs = []
+   call VarTabSetValues()
+endfunction
+
+command! -range=% -nargs=0 VarTabDetermineTabs <line1>,<line2>call VarTabDetermineTabs()
+nnoremap +t :call VarTabIncreaseColumn(v:count1)<CR>
+nnoremap -t :call VarTabDecreaseColumn(v:count1)<CR>
+nnoremap ät :call VarTabDetermineTabs()<CR>
+nnoremap äT :call VarTabClearTabs()<CR>
+xnoremap t :call VarTabDetermineTabs()<CR>
+" >>>
 " >>>
 " >>>
 
@@ -2638,6 +2717,8 @@ cnoremap ü <C-r>
 nnoremap Ü :EditReg<SPACE>
 nnoremap cO :call setreg('o', [])<CR>
 nnoremap yo "Oyy
+" nnoremap <C-p> :call setreg('"', system('pbpaste'))<CR>p
+" xnoremap Y y:call system('pbcopy', getreg('"'))<CR>
 " >>>
 " Completion <<<
 cnoremap <C-k> <UP>
@@ -2874,7 +2955,7 @@ vnoremap <expr> <C-i> mode() ==? "\<C-v>" ? ':Right<CR>'  : ':right<CR>'
 xnoremap <expr> A mode() !=# "\<C-v>" ? '<C-v>$A' : 'A'
 xnoremap <expr> I mode() !=# "\<C-v>" ? '<C-v>0I' : 'I'
 
-xnoremap S :Silicon<CR>
+" xnoremap S :Silicon<CR>
 " >>>
 " UNDER DEVELOPMENT <<<
 " nnoremap <nowait> \r :Review<CR>
@@ -3166,5 +3247,164 @@ set statusline+=%#SLBlu#XTAB=%#SLNrm#%{&expandtab}\
 " sessions        |               |              |   x   | x
 " files           |               |              |   x   | x
 " tags            |               |              |   x   | x
+
+" move to indent <<<
+" This function can be used to create up to 2*5*3*3=90 indentation motions
+"
+" The first parameter is the direction. Valid number values are ...
+" •  1 which moves to higher line numbers
+" • -1 which moves to lower line numbers.
+"
+" The second parameter is the indentation you move the cursor to. Valid string values are ...
+" • "!" (default) to move to lines with bigger or smaller indentations
+" • "+"           to move only to lines with bigger indentations
+" • "-"           to move only to lines with smaller indentations
+" • "="           to move to lines with the same indentation as the current line
+" • "0"           to move to lines with zero indentation
+"
+" The third parameter controls the position of an indentation block. Valid string values are ...
+" • "start" (default) to only move to the start of an indentation block
+" • "end"             to only move to the end of an indentation block
+" • "startend"        to move to start or end of an indentation block
+"
+" The fourth parameter defines how and indentation block is defined. Valid string values are ...
+" • "indent" (default) a block is only defined by indentation level
+" • "inner"            a block is similar to a paragraph but ignores empty lines surrounded by lines with same indentation level
+" • "paragraph"        a block is separated either by empty lines or by changing indentation levels
+" here a pseudo-graphical explanation of the block definition parameter ...
+"                                              indent       inner       paragraph
+" xxxxxxxxxxxxx
+" xxxxxxxxxxxxx                                END          END        END
+"                                              START
+"       xxxxxxxxxxxxxxxxxxxxxxxxx                           START      START
+"       xxxxxxxxxxxxxxxxxxxxxxxxx
+"       xxxxxxxxxxxxxxxxxxxxxxxxx                                      END
+"
+"       xxxxxxxxxxxxxxxxxxxxxxxxx                                      START
+"       xxxxxxxxxxxxxxxxxxxxxxxxx
+"       xxxxxxxxxxxxxxxxxxxxxxxxx              END          END        END
+" xxxxxxxxxxxxx                                START        START
+" xxxxxxxxxxxxx
+"
+" Here some example mappings
+" nnoremap [[ :call MoveToIndent(-1, "-")<CR>
+" nnoremap ][ :call MoveToIndent( 1, "-")<CR>
+" nnoremap [] :call MoveToIndent(-1, "+")<CR>
+" nnoremap ]] :call MoveToIndent( 1, "+")<CR>
+function! MoveToIndent(direction, indent="!", at="start", block="indent")
+lua << EOF
+   local buffer   = vim.buffer()
+   local lastline = #buffer
+
+   if lastline <= 1 then
+      return
+   end
+
+   local direction   = vim.eval("a:direction")
+   local indentation = vim.eval("a:indent")
+   local at          = vim.eval("a:at")
+   local block       = vim.eval("a:block")
+   local curline     = vim.window().line
+   local targetline  = 0
+   local lines       = {}
+   local lastindentlvl= 0
+   local rd = 1
+   local wr = 1
+
+   for i,v in ipairs(buffer) do
+      lines[#lines + 1] = { ["linenr"] = i, ["indentlvl"] = vim.fn.indent(i), ["empty"] = string.match(v, "^%s*$") and true or false, ["sblock"] = false, ["eblock"] = false}
+   end
+
+   repeat
+      if lines[rd].empty then
+         rd = rd + 1
+      else
+         if wr == rd then
+            lastindentlvl = lines[rd].indentlvl
+            rd = rd + 1
+            wr = wr + 1
+         else
+            lines[wr].indentlvl = math.max(lastindentlvl, lines[rd].indentlvl)
+            wr = wr + 1
+         end
+      end
+   until (rd == lastline) and (wr == lastline)
+   if lines[rd].empty then lines[wr].indentlvl = lastindentlvl end
+
+   local l1 = 1
+   local l2 = 2
+   while (l2 <= lastline) do
+      if block == "indent" then
+
+         if lines[l1].indentlvl ~= lines[l2].indentlvl then
+            lines[l1].eblock = true
+            lines[l2].sblock = true
+         end
+
+      elseif block == "paragraph" then
+
+         if lines[l1].empty and (not lines[l2].empty) then
+            lines[l2].sblock = true
+         elseif lines[l2].empty and (not lines[l1].empty) then
+            lines[l1].eblock = true
+         elseif (not lines[l1].empty) and (not lines[l2].empty) and (lines[l1].indentlvl ~= lines[l2].indentlvl) then
+            lines[l1].eblock = true
+            lines[l2].sblock = true
+         end
+
+      elseif block == "inner" then
+
+         if lines[l1].empty and (not lines[l2].empty) and (lines[l1].indentlvl ~= lines[l2].indentlvl) then
+            lines[l2].sblock = true
+         elseif lines[l2].empty and (not lines[l1].empty) and (lines[l1].indentlvl ~= lines[l2].indentlvl) then
+            lines[l1].eblock = true
+         elseif (not lines[l1].empty) and (not lines[l2].empty) and (lines[l1].indentlvl ~= lines[l2].indentlvl) then
+            lines[l1].eblock = true
+            lines[l2].sblock = true
+         end
+      else
+         vim.command([[echoerr "Unknown block definition value ']] .. block .. [['"]])
+         return
+      end
+      l1 = l1 + 1
+      l2 = l2 + 1
+   end
+   if not lines[lastline].empty then lines[lastline].eblock = true end
+
+   local til = (direction == 1) and lastline or 1
+   local curindent = lines[curline].indentlvl
+   for i=curline,til,direction do
+
+      if (i ~= curline)
+         and
+         (((at == "start")    and lines[i].sblock) or
+            ((at == "end")      and lines[i].eblock) or
+            ((at == "startend") and (lines[i].sblock or lines[i].eblock)))
+         and
+         (((indentation == "+") and (lines[i].indentlvl > curindent))  or
+            ((indentation == "-") and (lines[i].indentlvl < curindent))  or
+            ((indentation == "!") and (lines[i].indentlvl ~= curindent)) or
+            ((indentation == "0") and (lines[i].indentlvl == 0))         or
+            ((indentation == "=") and (lines[i].indentlvl == curindent))) then
+            targetline = i
+            break
+      end
+   end
+
+   if targetline ~= 0 then
+      vim.command(targetline)
+      vim.command("normal ^")
+   end
+EOF
+endfunction
+
+nnoremap [[ :call MoveToIndent(-1, "-")<CR>
+nnoremap ][ :call MoveToIndent( 1, "-")<CR>
+nnoremap [] :call MoveToIndent(-1, "+")<CR>
+nnoremap ]] :call MoveToIndent( 1, "+")<CR>
+" >>>
+
+" syntax include @LuaSyn syntax/lua.vim
+" syntax region LuaCode start="^lua.*EOF$" end="^EOF$" contains=@LuaSyn
 
 " vim: fdm=marker fmr=<<<,>>>
