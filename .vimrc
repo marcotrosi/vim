@@ -1453,7 +1453,7 @@ endfunction
 
 function! Edit(params)
    let l:TermBufNum = term_start(s:EditFilesCmd .. " " .. a:params, {'term_name':'edit files', 'hidden':0, 'term_finish':'close', 'norestore':1, 'vertical':1, 'exit_cb':'EditFiles'})
-   " let l:WinID = popup_create(l:TermBufNum, {'minwidth': 50, 'minheight': 20})
+   let l:WinID = popup_create(l:TermBufNum, {'minwidth': 50, 'minheight': 20})
 endfunction
 
 command! -nargs=? Edit call Edit(<q-args>)
@@ -1557,10 +1557,10 @@ endfunction
 " edit old files <<<
 let s:OldFilesPre = '/tmp/o_pre.tmp'
 let s:OldFilesSel = '/tmp/o.tmp'
-let s:OldFilesCmd = '/Users/marcotrosi/.vim/bin/o.sh'
+let s:OldFilesCmd = '/tmp/o.sh'
+" let s:OldFilesCmd = '/Users/marcotrosi/.vim/bin/o.sh'
 
 function! EditOldFiles(j, s)
-   echom "edit callback"
    wincmd p
    if !filereadable(s:OldFilesSel) 
       return
@@ -1574,8 +1574,90 @@ function! OldFiles()
    execute 'redir! > ' . s:OldFilesPre
    silent oldfiles
    redir END
+
+   let l:OldFilesScriptLines = [
+            \ 'rm -f  /tmp/o.tmp',
+            \ 'if [ ! -s /tmp/o_pre.tmp ] ; then exit 0 ; fi',
+            \ 'cat /tmp/o_pre.tmp | sk -m --reverse > /tmp/o.tmp || rm -f /tmp/o.tmp',
+            \ 'if [ ! -s /tmp/o.tmp ] ; then rm -f /tmp/o.tmp ; fi',
+            \ 'rm -f  /tmp/o_pre.tmp',
+            \ 'exit 0' ]
+   call writefile(l:OldFilesScriptLines, s:OldFilesCmd)
+   call system('chmod 754 ' .. s:OldFilesCmd)
+
    let l:TermBufNum = term_start(s:OldFilesCmd, {'term_name':'old files', 'hidden':0, 'term_finish':'close', 'norestore':1, 'vertical':1, 'exit_cb':'EditOldFiles'})
 endfunction
+" >>>
+
+" match column <<<
+let g:MatchColTrm = ''
+let g:MatchColNum = 1
+let g:MatchColSep = '\t'
+
+function! MatchCol(...) " parameters are trim, column, separator and all are optional
+
+   let l:Trm = get(a:, 1, g:MatchColTrm)
+   let l:Col = eval(get(a:, 2, g:MatchColNum))
+   let l:Sep = get(a:, 3, g:MatchColSep)
+
+   let l:PCols = string(abs(l:Col) - 1)
+
+   if l:Trm == '!'
+      let l:W = '\ *'
+   else
+      let l:W = ''
+   endif
+
+   if l:Col > 0
+      let l:Pattern = '^\([^' .. l:Sep .. ']\+' .. l:Sep .. '\)\{' .. l:PCols .. '}' .. l:W .. '\zs[^' .. l:Sep .. ']\{-}\ze' .. l:W .. '\%(' .. l:Sep .. '\|$\)'
+   elseif l:Col < 0
+      let l:Pattern = '\%(^\|' .. l:Sep .. '\)' .. l:W .. '\zs[^' .. l:Sep .. ']\{-}\ze' .. l:W .. '\(' .. l:Sep .. '[^' .. l:Sep .. ']\+\)\{' .. l:PCols .. '}$'
+   else
+      return
+   endif
+
+   call setreg('/', l:Pattern)
+endfunction
+
+function MatchColToggleTrim()
+   if g:MatchColTrm == ''
+      let g:MatchColTrm = '!'
+   else
+      let g:MatchColTrm = ''
+   endif
+   call MatchCol()
+endfunction
+
+function MatchColNext()
+   let g:MatchColNum = g:MatchColNum + 1
+   if g:MatchColNum == 0
+      let g:MatchColNum = 1
+   endif
+   call MatchCol()
+endfunction
+
+function MatchColPrev()
+   let g:MatchColNum = g:MatchColNum - 1
+   if g:MatchColNum == 0
+      let g:MatchColNum = -1
+   endif
+   call MatchCol()
+endfunction
+
+function MatchColSetSep(sep)
+   let g:MatchColSep = a:sep
+   call MatchCol()
+endfunction
+
+command! -bang -nargs=* MatchCol call MatchCol(<q-bang>, <f-args>)
+
+nnoremap !c :call MatchColToggleTrim()<CR>
+nnoremap +c :call MatchColNext()<CR>
+nnoremap -c :call MatchColPrev()<CR>
+nnoremap =<Space> :call MatchColSetSep(' ')<CR>
+nnoremap =<Tab> :call MatchColSetSep('\t')<CR>
+nnoremap =, :call MatchColSetSep(',')<CR>
+nnoremap =; :call MatchColSetSep(';')<CR>
 " >>>
 
 " UNDER DEVELOPMENT <<<
@@ -2295,9 +2377,115 @@ endfunction
 command! -range=% -nargs=0 VarTabDetermineTabs <line1>,<line2>call VarTabDetermineTabs()
 nnoremap +t :call VarTabIncreaseColumn(v:count1)<CR>
 nnoremap -t :call VarTabDecreaseColumn(v:count1)<CR>
-nnoremap ät :call VarTabDetermineTabs()<CR>
+nnoremap ät :VarTabDetermineTabs<CR>
 nnoremap äT :call VarTabClearTabs()<CR>
 xnoremap t :call VarTabDetermineTabs()<CR>
+" >>>
+" zip lines <<<
+function! Zip(align, fline, lline, count, ...)
+
+   " fline, lline, count  -> command       -> action
+   " 1    , 1    , -1     -> :Zip          -> from current paragraph til end of file
+   " 3    , 3    , 3      -> :3Zip         -> zip 3 paragraphs to current block, in total 4 paragraphs zipped
+   " 1    , 10   , 10     -> :1,10Zip      -> zip paragraphs in range
+   "                      -> :Zip!         -> run :Align at the end
+   "                      -> :Zip ,        -> separate with ,
+   "                      -> :Zip , '\-\+' -> new paragraph starts after lines matching \-\+
+   "                      -> :Zip , 3      -> new paragraph starts after every 3 lines
+
+   let l:Sep   = get(a:, 1, '')
+   let l:Delim = get(a:, 2, '^$') " can be a regex string or a number
+   let l:Mode  = v:none
+
+   if (a:fline == a:lline) && (a:count == -1)
+      let l:Mode = 'til_end' " run from current paragraph til end of file
+   elseif (a:fline == a:lline) && (a:fline == a:count)
+      let l:Mode = 'cnt_par' " run for the specified amount of paragraphs
+   elseif (a:fline < a:lline) && (a:lline == a:count)
+      let l:Mode = 'for_rng' " run for all paragraphs within range
+   endif
+
+   if l:Mode == v:none
+      echoerr 'Zip error: unexpected situation'
+      return
+   endif
+
+   if l:Mode == 'for_rng'
+      let l:FirstLine = a:fline
+      let l:LastLine  = a:lline
+   else
+      normal vipo
+      let l:FirstLine = line('.')
+      let l:LastLine  = line('$')
+   endif
+
+   let l:Offset      = 0
+   let l:ParCounter  = 0
+   let l:NumOfLines  = 0
+   let l:LastParLine = 0
+   let l:CurrentLine = l:FirstLine + l:Offset
+   let l:ZipIt       = v:false
+
+   try
+      if type(eval(l:Delim)) == v:t_number
+         let l:NumOfLines  = eval(l:Delim)
+         let l:LastParLine = l:FirstLine + l:NumOfLines - 1
+      endif
+   catch
+   endtry
+   
+   while l:CurrentLine <= l:LastLine
+
+      if l:ZipIt == v:false
+         let l:CurrentLine = l:CurrentLine + 1
+      endif
+
+      if l:NumOfLines == 0 " use l:Delim as regex pattern
+         if match(getline(l:CurrentLine), l:Delim) != -1
+            let l:ZipIt = v:true
+            let l:Offset = 0
+            if l:LastParLine == 0
+               let l:LastParLine = l:CurrentLine - 1
+            endif
+            if l:Mode == 'cnt_par'
+               let l:ParCounter = l:ParCounter + 1
+               " TODO count correctly and skip multiple empty lines
+               if l:ParCounter == a:count
+                  break
+               end
+            endif
+            call deletebufline("%", l:CurrentLine)
+            let l:LastLine = l:LastLine - 1
+            continue
+         endif
+      else " use l:Delim as number of lines
+         if (l:CurrentLine - l:FirstLine) == l:NumOfLines
+            let l:ZipIt = v:true
+         end
+         if l:Offset == l:NumOfLines
+            let l:Offset = 0
+         end
+      endif
+
+      if l:ZipIt == v:true
+         call setline(l:FirstLine + l:Offset, getline(l:FirstLine + l:Offset) .. l:Sep .. getline(l:CurrentLine))
+         let l:Offset = l:Offset + 1
+         call deletebufline("%", l:CurrentLine)
+         let l:LastLine = l:LastLine - 1
+      endif
+
+   endwhile
+
+   if a:align == '!'
+      AlignPush
+      AlignCtrl p0P0
+      let l:AlignPattern = substitute(l:Sep, ' ', '\\s', 'g')
+      exec l:FirstLine .. ';' .. l:LastParLine .. 'Align ' .. l:AlignPattern
+      AlignPop
+   end
+endfunction
+
+command! -bang -range -nargs=* Zip call Zip(<q-bang>, <line1>, <line2>, <count>, <f-args>)
 " >>>
 " >>>
 " >>>
@@ -2402,7 +2590,9 @@ set laststatus=2
 set listchars=eol:↲,tab:↦\ ,nbsp:␣,extends:…,trail:⋅
 set mousemodel=popup_setpos
 set nrformats=bin,hex
-set pastetoggle=ä<SPACE>
+" set omnifunc=syntaxcomplete#Complete
+set omnifunc=ccomplete#Complete
+set pastetoggle=ä<Space>
 set path=.,,** " use :checkpath
 set scrolloff=10
 set sessionoptions=buffers,curdir
@@ -2458,8 +2648,8 @@ augroup VIMRC
    autocmd BufEnter *.vba set filetype=vb
    autocmd BufEnter *.gp  set filetype=gnuplot
 
-   autocmd BufEnter *.py set noexpandtab
-   autocmd BufLeave *.py set expandtab
+   " autocmd BufEnter *.py set noexpandtab
+   " autocmd BufLeave *.py set expandtab
 
    autocmd BufEnter makefile set noexpandtab
    autocmd BufLeave makefile set expandtab
@@ -2743,23 +2933,21 @@ inoremap äf <C-x><C-f>
 " vim commandline
 inoremap äv <C-x><C-v>
 " spelling suggestions
-" äs is used for ShowAvailableSnips()
 inoremap är <C-x><C-s>
+" äs is used for ShowAvailableSnips()
 " tags
 inoremap äg <C-x><C-]>
+" omni completion
+inoremap äo <C-x><C-o>
+inoremap <C-Space> <C-x><C-o>
 " user defined
 let g:UserCompletionFunc=0
-" inoremap äu <C-x><C-u>
-" inoremap <C-SPACE> <C-x><C-u>
 inoremap äw <C-o>:let g:UserCompletionFunc=0<CR><C-x><C-u>
 inoremap äz <C-o>:let g:UserCompletionFunc=1<CR><C-x><C-u>
 inoremap äe <C-o>:let g:UserCompletionFunc=2<CR><C-x><C-u>
 inoremap äE <C-o>:let g:UserCompletionFunc=3<CR><C-x><C-u>
-
+" insert timestamps
 inoremap äT <C-R>=InsertTimeStamp()<CR>
-" omni completion
-inoremap äo <C-x><C-o>
-" inoremap <S-SPACE> <C-x><C-o>
 " >>>
 " Cycle Settings <<<
 " nnoremap +a
@@ -2895,6 +3083,7 @@ nnoremap öz :call Panel('Cheat')<CR>
 " Misc <<<
 nnoremap gA :call GetHighlightGroup()<CR>
 nnoremap gG ggVG
+nnoremap yY :YankSearchMatches<CR>
 nnoremap g. @:
 nnoremap g: :<C-r><C-l><CR>
 xnoremap g: "zy:<C-r>z<CR>
@@ -3267,7 +3456,7 @@ set statusline+=%#SLBlu#XTAB=%#SLNrm#%{&expandtab}\
 " • "end"             to only move to the end of an indentation block
 " • "startend"        to move to start or end of an indentation block
 "
-" The fourth parameter defines how and indentation block is defined. Valid string values are ...
+" The fourth parameter defines how an indentation block is defined. Valid string values are ...
 " • "indent" (default) a block is only defined by indentation level
 " • "inner"            a block is similar to a paragraph but ignores empty lines surrounded by lines with same indentation level
 " • "paragraph"        a block is separated either by empty lines or by changing indentation levels
@@ -3287,10 +3476,10 @@ set statusline+=%#SLBlu#XTAB=%#SLNrm#%{&expandtab}\
 " xxxxxxxxxxxxx
 "
 " Here some example mappings
-" nnoremap [[ :call MoveToIndent(-1, "-")<CR>
-" nnoremap ][ :call MoveToIndent( 1, "-")<CR>
-" nnoremap [] :call MoveToIndent(-1, "+")<CR>
-" nnoremap ]] :call MoveToIndent( 1, "+")<CR>
+" nnoremap g[[ :call MoveToIndent(-1, "-")<CR>
+" nnoremap g][ :call MoveToIndent( 1, "-")<CR>
+" nnoremap g[] :call MoveToIndent(-1, "+")<CR>
+" nnoremap g]] :call MoveToIndent( 1, "+")<CR>
 function! MoveToIndent(direction, indent="!", at="start", block="indent")
 lua << EOF
    local buffer   = vim.buffer()
@@ -3398,10 +3587,20 @@ lua << EOF
 EOF
 endfunction
 
-nnoremap [[ :call MoveToIndent(-1, "-")<CR>
-nnoremap ][ :call MoveToIndent( 1, "-")<CR>
-nnoremap [] :call MoveToIndent(-1, "+")<CR>
-nnoremap ]] :call MoveToIndent( 1, "+")<CR>
+nnoremap [<< :call MoveToIndent(-1, "-", "start")<CR>
+nnoremap [<> :call MoveToIndent(-1, "-", "end")<CR>
+nnoremap ]<< :call MoveToIndent( 1, "-", "start")<CR>
+nnoremap ]<> :call MoveToIndent( 1, "-", "end")<CR>
+nnoremap [>< :call MoveToIndent(-1, "+", "start")<CR>
+nnoremap [>> :call MoveToIndent(-1, "+", "end")<CR>
+nnoremap ]>< :call MoveToIndent( 1, "+", "start")<CR>
+nnoremap ]>> :call MoveToIndent( 1, "+", "end")<CR>
+nnoremap [=< :call MoveToIndent(-1, "=", "start")<CR>
+nnoremap [=> :call MoveToIndent(-1, "=", "end")<CR>
+nnoremap ]=< :call MoveToIndent( 1, "=", "start")<CR>
+nnoremap ]=> :call MoveToIndent( 1, "=", "end")<CR>
+nnoremap [0 :call MoveToIndent(-1, "0", "startend", "paragraph")<CR>
+nnoremap ]0 :call MoveToIndent( 1, "0", "startend", "paragraph")<CR>
 " >>>
 
 " syntax include @LuaSyn syntax/lua.vim
