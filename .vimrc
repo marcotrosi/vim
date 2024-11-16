@@ -2605,6 +2605,7 @@ let g:TextWidth=120
 execute 'set textwidth='.g:TextWidth
 set undodir=~/.vim/undodir,/tmp
 set virtualedit=block
+set wildoptions=pum
 
 sign define E text=× texthl=red
 sign define W text=! texthl=org
