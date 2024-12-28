@@ -2596,7 +2596,7 @@ set pastetoggle=ä<Space>
 set path=.,,** " use :checkpath
 set scrolloff=10
 set sessionoptions=buffers,curdir
-set shell=/usr/local/bin/bash
+set shell=/opt/homebrew/bin/bash
 set shortmess=fIlmnxtToO
 set spelllang=en
 set spellsuggest=best,9
@@ -2902,6 +2902,8 @@ nnoremap mm g`Mzz
 " Registers <<<
 nnoremap cr :call ChangeRegType(v:register)<CR>
 nnoremap cR :call ClearRegisters()<CR>
+nnoremap c* :call setreg('*', getreg('"'), 'l')<CR>
+nnoremap c" :call setreg('"', getreg('*'), 'l')<CR>
 " nnoremap äs :call setreg('"', trim(getreg('"')))<CR> TODO find better mapping
 inoremap ü <C-r>
 cnoremap ü <C-r>
