@@ -928,6 +928,34 @@ function! GetPrevNonBlankLine()
    endwhile
 endfunction " >>>
 
+" get next blank line <<<
+function! GetNextBlankLine()
+   let l:LineNum = line(".")
+   while v:true
+      if getline(l:LineNum) =~ '^\s*$'
+         return l:LineNum
+      endif
+      let l:LineNum = l:LineNum + 1
+      if l:LineNum > line("$")
+         return -1
+      endif
+   endwhile
+endfunction " >>>
+
+" get previous blank line <<<
+function! GetPrevBlankLine()
+   let l:LineNum = line(".")
+   while v:true
+      if getline(l:LineNum) =~ '^\s*$'
+         return l:LineNum
+      endif
+      let l:LineNum = l:LineNum - 1
+      if l:LineNum < 1
+         return -1
+      endif
+   endwhile
+endfunction " >>>
+
 " indented text object <<<
 function! IndTxtObj(inner, zeroindent)
 
@@ -1658,6 +1686,30 @@ nnoremap =<Space> :call MatchColSetSep(' ')<CR>
 nnoremap =<Tab> :call MatchColSetSep('\t')<CR>
 nnoremap =, :call MatchColSetSep(',')<CR>
 nnoremap =; :call MatchColSetSep(';')<CR>
+" >>>
+
+" markdown folding <<<
+function! MarkdownLevel()
+   if getline(v:lnum) =~ '^# .*$'
+      return ">1"
+   endif
+   if getline(v:lnum) =~ '^## .*$'
+      return ">2"
+   endif
+   if getline(v:lnum) =~ '^### .*$'
+      return ">3"
+   endif
+   if getline(v:lnum) =~ '^#### .*$'
+      return ">4"
+   endif
+   if getline(v:lnum) =~ '^##### .*$'
+      return ">5"
+   endif
+   if getline(v:lnum) =~ '^###### .*$'
+      return ">6"
+   endif
+   return "="
+endfunction
 " >>>
 
 " UNDER DEVELOPMENT <<<
@@ -2487,6 +2539,82 @@ endfunction
 
 command! -bang -range -nargs=* Zip call Zip(<q-bang>, <line1>, <line2>, <count>, <f-args>)
 " >>>
+" paragraph motions <<<
+" store current position for column
+" if line 1 dont move
+" if line empty find prev non-empty line
+   " if no prev non-empty line, dont move
+   " if prev non-empty line found, move
+" if line non-empty
+   " check if previous line is empty (we are at beginning of paragraph)
+      " yes - find end of previous paragraph
+      " no - find last non-empty line is same direction
+" restor column
+function! PrevParagraph()
+
+   let l:CurPos=getcursorcharpos()
+
+   if l:CurPos[1] == 1 " first line number
+      return
+   endif
+
+   if getline(l:CurPos[1]) =~ '^\s*$'
+      let l:PrevLine = GetPrevNonBlankLine()
+      if l:PrevLine == -1
+         return
+      endif
+      call setcursorcharpos(l:PrevLine, l:CurPos[2])
+   else " line is not empty
+      if getline(l:CurPos[1]-1) =~ '^\s*$'
+         let l:PrevNonBlankLine = prevnonblank(l:CurPos[1]-1)
+         if l:PrevNonBlankLine != 0
+            call setcursorcharpos(l:PrevNonBlankLine, l:CurPos[2])
+         endif
+      else
+         let l:PrevBlankLine = GetPrevBlankLine()
+         if l:PrevBlankLine != -1
+            call setcursorcharpos(l:PrevBlankLine+1, l:CurPos[2])
+         else
+            call setcursorcharpos(1, l:CurPos[2])
+         endif
+      endif
+   endif
+   return
+endfunction
+nnoremap { :call PrevParagraph()<CR>
+
+function! NextParagraph()
+   let l:CurPos=getcursorcharpos()
+
+   if l:CurPos[1] == line('$')
+      return
+   endif
+
+   if getline(l:CurPos[1]) =~ '^\s*$'
+      let l:NextLine = GetNextNonBlankLine()
+      if l:NextLine == -1
+         return
+      endif
+      call setcursorcharpos(l:NextLine, l:CurPos[2])
+   else
+      if getline(l:CurPos[1]+1) =~ '^\s*$'
+         let l:NextNonBlankLine = nextnonblank(l:CurPos[1]+1)
+         if l:NextNonBlankLine != 0
+            call setcursorcharpos(l:NextNonBlankLine, l:CurPos[2])
+         endif
+      else
+         let l:NextBlankLine = GetNextBlankLine()
+         if l:NextBlankLine != -1
+            call setcursorcharpos(l:NextBlankLine-1, l:CurPos[2])
+         else
+            call setcursorcharpos(line('$'), l:CurPos[2])
+         endif
+      endif
+   endif
+   return
+endfunction
+nnoremap } :call NextParagraph()<CR>
+" >>>
 " >>>
 " >>>
 
@@ -2665,6 +2793,9 @@ augroup VIMRC
    autocmd BufWinEnter quickfix call CreateLocListMappings()
    autocmd WinLeave * if &buftype == 'quickfix' | call DeleteLocListMappings() | endif
    autocmd BufWinLeave quickfix call DeleteLocListMappings()
+
+   au BufEnter *.md setlocal foldexpr=MarkdownLevel()
+   au BufEnter *.md setlocal foldmethod=expr
 
 augroup END
 " >>>
@@ -2860,6 +2991,8 @@ nnoremap <silent> <Bslash><Bslash> :let tmp=@/<BAR>s:/:\\:ge<BAR>let @/=tmp<BAR>
 " inoremap <C-j> <Down>
 " inoremap <C-h> <Left>
 " inoremap <C-l> <Right>
+nnoremap g{ {
+nnoremap g} }
 snoremap <C-k> <Up>
 snoremap <C-j> <Down>
 snoremap <C-h> <Left>
