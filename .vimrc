@@ -4,6 +4,15 @@
 "   \_/ |___|_|  |_|_|_\\___|
 "                  marcotrosi
 
+" plugins <<<
+packadd cfilter
+packadd helptoc
+" packadd matchit
+" packadd comment
+" packadd justify
+" packadd termdebug
+" >>>
+
 " functions <<<
 " set list index <<<
 function! SetListIndex(list, index, value, empty)
@@ -76,7 +85,7 @@ function! CycleDiffAlgorithm(direction)
    let s:DiffAlgorithm = s:DiffAlgorithm + a:direction
    if s:DiffAlgorithm >= len(s:DiffAlgorithms) | let s:DiffAlgorithm = 0 | endif
    if s:DiffAlgorithm < 0 | let s:DiffAlgorithm = len(s:DiffAlgorithms)-1 | endif
-   exe "set diffopt=vertical,filler,closeoff,algorithm:" .. s:DiffAlgorithms[s:DiffAlgorithm]
+   exe "set diffopt=vertical,filler,closeoff,linematch:60,algorithm:" .. s:DiffAlgorithms[s:DiffAlgorithm]
    echo "diffalgorithm:" s:DiffAlgorithms[s:DiffAlgorithm]
 endf
 " >>>
@@ -1712,6 +1721,25 @@ function! MarkdownLevel()
 endfunction
 " >>>
 
+" num2word <<<
+let s:ones = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"]
+let s:teens = ["ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen"]
+let s:tens = ["", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"]
+
+function! NumToWord(x) abort
+   let l:n = eval(a:x)
+    if l:n < 10
+        return s:ones[l:n]
+    elseif l:n < 20
+        return s:teens[l:n - 10]
+    else
+        let l:ten_part = s:tens[l:n / 10]
+        let l:one_part = l:n % 10 == 0 ? "" : "-" . s:ones[l:n % 10]
+        return l:ten_part . l:one_part
+    endif
+endfunction
+" >>>
+
 " UNDER DEVELOPMENT <<<
 " get misspelled words <<<
 function! GetMisspelledWords1() " <<<
@@ -2699,6 +2727,7 @@ set belloff=all
 set complete=.,w,b,u
 " set complete=.,w,b,u,t,i
 " set completeopt=menu,longest,noinsert,noselect
+set completeopt+=preinsert
 set completefunc=UserCompletion
 set dictionary=/usr/share/dict/words
 set directory=~/.vim/swapdir//,/tmp//
@@ -2752,7 +2781,7 @@ sign define C text=▶︎ texthl=red
 " ◐ ▲ ◆
 " →
 
-exe "set diffopt=vertical,filler,closeoff,algorithm:" .. s:DiffAlgorithms[s:DiffAlgorithm]
+exe "set diffopt=vertical,filler,closeoff,linematch:60,algorithm:" .. s:DiffAlgorithms[s:DiffAlgorithm]
 if &diff
    set cursorbind
    set scrollbind
@@ -2968,8 +2997,8 @@ nnoremap ön :enew<CR>
 nnoremap öN :tabnew<CR>
 nnoremap öh :tabp<CR>
 nnoremap öl :tabn<CR>
-nnoremap öj :bn<CR>
-nnoremap ök :bp<CR>
+nnoremap öj :call NextBuffer(1)<CR>
+nnoremap ök :call NextBuffer(-1)<CR>
 nnoremap öb :call Panel('Buffers')<CR>
 nnoremap ö<SPACE> :b#<CR>
 nnoremap öw :w!<CR>
@@ -3280,7 +3309,7 @@ vnoremap <expr> <C-i> mode() ==? "\<C-v>" ? ':Right<CR>'  : ':right<CR>'
 xnoremap <expr> A mode() !=# "\<C-v>" ? '<C-v>$A' : 'A'
 xnoremap <expr> I mode() !=# "\<C-v>" ? '<C-v>0I' : 'I'
 
-" xnoremap S :Silicon<CR>
+xnoremap S :Silicon<CR>
 " >>>
 " UNDER DEVELOPMENT <<<
 " nnoremap <nowait> \r :Review<CR>
