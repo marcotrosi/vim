@@ -2643,6 +2643,18 @@ function! NextParagraph()
 endfunction
 nnoremap } :call NextParagraph()<CR>
 " >>>
+" get compiler include search paths <<<
+function GetCompilerIncludeSearchPaths()
+   let l:Out = systemlist('echo | clang -xc -E -v -')
+   let l:PathLineMatches = matchstrlist(l:Out, '^ \(/\S\+\)', {'submatches': v:true})
+   let l:Paths = []
+   for p in l:PathLineMatches
+      call add(l:Paths, p['submatches'][0])
+   endfor
+   redraw!
+   return join(l:Paths, ',')
+endfunction
+" >>>
 " >>>
 " >>>
 
@@ -2752,7 +2764,8 @@ set nrformats=bin,hex
 " set omnifunc=ccomplete#Complete
 let g:c_syntax_for_h=1
 set pastetoggle=ä<Space>
-set path=.,,** " use :checkpath
+" use :checkpath to check if all included files can be found
+set path=.,,**
 set previewpopup="on"
 set scrolloff=10
 set sessionoptions=buffers,curdir
@@ -2815,6 +2828,7 @@ augroup VIMRC
    autocmd BufEnter makefile set noexpandtab
    autocmd BufLeave makefile set expandtab
 
+   autocmd VimEnter * exec 'set path+=' .. GetCompilerIncludeSearchPaths()
    autocmd VimLeavePre * call CleanUp()
    autocmd ColorScheme * call DefMatchColors() " TODO temporary til part of colorschemes
 
