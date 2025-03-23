@@ -2844,8 +2844,8 @@ augroup VIMRC
    autocmd WinLeave * if &buftype == 'quickfix' | call DeleteLocListMappings() | endif
    autocmd BufWinLeave quickfix call DeleteLocListMappings()
 
-   au BufEnter *.md setlocal foldexpr=MarkdownLevel()
-   au BufEnter *.md setlocal foldmethod=expr
+   autocmd BufEnter *.md setlocal foldexpr=MarkdownLevel()
+   autocmd BufEnter *.md setlocal foldmethod=expr
 
 augroup END
 " >>>
@@ -2960,6 +2960,8 @@ nnoremap e :cnext<CR>zz
 nnoremap E :cprevious<CR>zz
 
 nnoremap ös :call ToggleLocList()<CR>
+nnoremap <space>s :exec 'lvimgrep /' .. expand('<cword>') .. '/ %'<CR>:lopen<CR>
+nnoremap <space>S :exec 'lvimgrep /' .. expand('<cWORD>') .. '/ %'<CR>:lopen<CR>
 nnoremap <C-h> :silent! lolder<CR>
 nnoremap <C-l> :silent! lnewer<CR>
 nnoremap <C-j> :lnext<CR>zz
