@@ -2727,7 +2727,8 @@ set belloff=all
 set complete=.,w,b,u
 " set complete=.,w,b,u,t,i
 " set completeopt=menu,longest,noinsert,noselect
-set completeopt+=preinsert
+" set completeopt+=preinsert
+set completeopt+=popup
 set completefunc=UserCompletion
 set dictionary=/usr/share/dict/words
 set directory=~/.vim/swapdir//,/tmp//
@@ -2748,9 +2749,11 @@ set listchars=eol:↲,tab:↦\ ,nbsp:␣,extends:…,trail:⋅
 set mousemodel=popup_setpos
 set nrformats=bin,hex
 " set omnifunc=syntaxcomplete#Complete
-set omnifunc=ccomplete#Complete
+" set omnifunc=ccomplete#Complete
+let g:c_syntax_for_h=1
 set pastetoggle=ä<Space>
 set path=.,,** " use :checkpath
+set previewpopup="on"
 set scrolloff=10
 set sessionoptions=buffers,curdir
 set shell=/opt/homebrew/bin/bash
@@ -2818,6 +2821,10 @@ augroup VIMRC
    autocmd CmdwinEnter * map <buffer> <S-CR> <C-c><C-e>
    autocmd FileType help nnoremap <buffer> q :helpclose<cr>
 
+   autocmd FileType c   setlocal commentstring=\ /*\ %s\ */
+   autocmd FileType lua setlocal comments=s:--[[,m:_,e:--]],:-- commentstring=\ --\ %s iskeyword+=:
+   autocmd FileType vim setlocal commentstring=\ \"\ %s
+
    autocmd WinEnter * if &buftype == 'quickfix' | call CreateLocListMappings() | endif
    autocmd BufWinEnter quickfix call CreateLocListMappings()
    autocmd WinLeave * if &buftype == 'quickfix' | call DeleteLocListMappings() | endif
@@ -2867,6 +2874,7 @@ nnoremap -- <C-x>
 " nnoremap gt :tag<SPACE>
 nnoremap öt :call Panel('Tags')<CR>
 nnoremap öö g<C-]>zz
+nnoremap öz :exec 'ptjump ' .. expand('<cword>')<CR>
 nnoremap Ö <C-t>zz
 nnoremap ää :call JumpToTest('')<CR>
 nnoremap äÄ :call JumpToTest(expand('<cword>'))<CR>
@@ -3243,7 +3251,7 @@ xnoremap <expr> gs SortCmd()
 nnoremap <expr> gss SortCmd() .. '_'
 " >>>
 " Cheat Sheets <<<
-nnoremap öz :call Panel('Cheat')<CR>
+nnoremap öy :call Panel('Cheat')<CR>
 " >>>
 " Misc <<<
 nnoremap gA :call GetHighlightGroup()<CR>
@@ -3292,8 +3300,8 @@ nnoremap <C-CR> i<CR><ESC>
 nnoremap g<C-CR> i<CR><ESC>kddpk==
 nnoremap ü <C-w>
 tnoremap ü <C-w>
-" nnoremap <C-w>ü :helpclose<CR> TODO preferred solution
 nnoremap üü :helpclose<CR>
+nnoremap üz :pclose<CR>
 nnoremap ß :vertical rightbelow terminal<CR>
 inoremap ö <C-c>
 cnoremap ö <C-c>
