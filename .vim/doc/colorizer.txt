@@ -36,6 +36,7 @@ Contents                                                        *Colorizer*
             2.13 Disable BufLeave autocomannd........|Colorizer-BufLeave|
             2.14 Control which autocommands trigger  |Colorizer-autocommands| 
             2.15 Rendering colors as virtual text....|Colorizer-virtual-text|
+            2.16 Customizing conceal settings........|Colorizer-conceal|
     3.  Colorizer Mappings...........................|Colorizer-maps|
     4.  Colorizer Tips...............................|Colorizer-tips|
     5.  Colorizer Feedback...........................|Colorizer-feedback|
@@ -277,7 +278,7 @@ dumps, the 'filetype' must be empty.
 ---------------------------------
 
 By default, the colorings will be deleted if you switch to a different buffer
-in the same window by using a *BufLeave* autocommand. However that might
+in the same window by using a |BufLeave| autocommand. However that might
 unintentionally uncolor the current window, so if you experience a problem
 with that, try setting the variable g:colorizer_disable_bufleave like this: >
 
@@ -296,7 +297,6 @@ autocommand, set `:let g:colorizer_textchangedi = 0`
 
 2.15 Rendering colors as virtual text                  *Colorizer-virtual-text*
 -------------------------------------
-
 (Neovim only)
 
 Rather than matching the colors add adding the corresponding syntax rules to
@@ -304,6 +304,15 @@ them, it is possible to render the colors as swatches at the end of each line,
 leveraging Neovim's virtual text. To do this, you can set:
 
     `let g:colorizer_use_virtual_text = 1`
+
+2.16 Customizing conceal settings                      *Colorizer-conceal*
+---------------------------------
+You can customize the 'concealcursor' setting that is applied to the terminal
+coloring by setting the following variable: >
+
+    let g:colorizer_conceal_cursor_mode='nvc'
+
+Default: "nv"
 
 ==============================================================================
 3. Colorizer Mappings                                      *Colorizer-maps*
@@ -350,12 +359,23 @@ highlighting, after you have been changing the file.
 The recommended way to do this is to use the g:colorizer_auto_filetype
 variable and set this to the desired filetypes. |Colorizer-hl-ft|
 
+If you happen to notice that Colorizer does not work for particular file
+types, you can use the following autocommand that will make sure that
+Colorizer is correctly called for every file type: >
+
+    augroup auto_colorize
+    autocmd!
+    autocmd FileType * :ColorHighlight
+    augroup END
+<
+Note: this may impact startup and (buffer-load) performance.
+
                                                     *Colorizer-slowdown*
 ----------------
 Slow performance
 ----------------
 Depending on your file, any of the highlighting functions might cause an
-performance decrease. This can be analyed, by setting the variable
+performance decrease. This can be analyzed, by setting the variable
 g:colorizer_debug to 1 in e.g. your |.vimrc| like this: >
 
     :let g:colorizer_debug = 1
@@ -391,6 +411,20 @@ g:colorizer_<name>_disable and then those functions won't be called anymore
 
     let g:colorizer_colornames_disable = 1
 <
+name can be any of: >
+    - term
+    - term_bold
+    - term_nroff
+    - term_conceal
+    - vimhighl_dump
+    - taskwarrior
+    - vimhighlight
+    - vimcolors
+    - rgba
+    - rgb
+    - hsla
+    - colornames
+
 If the slowdown is still noticeable, you might want to create
 a new issue at the plugins repository (|Colorizer-feedback|). You should
 provide a sample file, so that I will be able to reproduce the issue.
@@ -462,6 +496,8 @@ looking at my Amazon whishlist: http://www.amazon.de/wishlist/2BKAHE8J7Z6UW
 - Make use of Neovims virtual text
   https://github.com/chrisbra/Colorizer/issues/70 and 
   https://github.com/chrisbra/Colorizer/issues/71 and 
+- Make sure, the s:x11_color_pattern does not start with the engine
+  fixes https://github.com/chrisbra/Colorizer/issues/102)
 
 0.11 Jan 15, 2015 {{{1
 - use |TextChanged| autocommand if possible

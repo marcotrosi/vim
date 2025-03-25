@@ -181,7 +181,7 @@ function! s:GetDirContent(lst,dir,lvl) " <<<
             call add(s:ListOfPaths, {'path':l:directory, 'rpath':substitute(l:directory, Slash(getcwd()), '', ''), 'isdir': v:true, 'isopen': v:true, 'dir':l:directory, 'idx':len(s:ListOfPaths)})
             call s:GetDirContent(a:lst, l:directory, a:lvl + 1)
          else
-            call add(a:lst, repeat('  ', a:lvl).' ▶︎ ' . split(l:directory, '/')[-1])
+            call add(a:lst, repeat('  ', a:lvl).' ▶ ' . split(l:directory, '/')[-1])
             call add(s:ListOfPaths, {'path':l:directory, 'rpath':substitute(l:directory, Slash(getcwd()), '', ''), 'isdir': v:true, 'isopen': v:false, 'dir':l:directory, 'idx':len(s:ListOfPaths)})
          endif
 

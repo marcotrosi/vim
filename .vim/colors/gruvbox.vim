@@ -75,6 +75,7 @@ hi! link Tag Special
 hi! link lCursor Cursor
 hi! link iCursor Cursor
 hi! link vCursor Cursor
+hi! link ComplMatchIns Comment
 
 if (has('termguicolors') && &termguicolors) || has('gui_running')
 

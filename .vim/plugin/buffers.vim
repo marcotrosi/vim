@@ -105,3 +105,40 @@ function! BufferDec() " <<<
    " set modifiable
    " set nomodifiable
 endfunction " >>>
+
+function! NextBuffer(direction) " <<<
+   let l:CurBuffer     = bufnr()
+   let l:LastBufferNum = bufnr('$')
+   let l:ListOfBuffers = []
+
+   let l:i = 0 | while l:i <= l:LastBufferNum | let l:i = l:i + 1
+      if getbufvar(l:i, '&modifiable') && getbufvar(l:i, '&buflisted')
+         call add(l:ListOfBuffers, l:i)
+      endif
+   endwhile
+
+   let l:NumOfBuffers = len(l:ListOfBuffers)
+
+   for i in range(l:NumOfBuffers)
+
+      if l:CurBuffer == l:ListOfBuffers[i]
+
+         let l:NextBufferIndex = i + a:direction
+
+         if a:direction > 0
+            if l:NextBufferIndex >= l:NumOfBuffers
+               let l:NextBufferIndex = 0
+            endif
+         endif
+
+         if a:direction < 0
+            if l:NextBufferIndex < 0
+               let l:NextBufferIndex = l:NumOfBuffers - 1
+            endif
+         endif
+
+         exec "buffer " .. l:ListOfBuffers[l:NextBufferIndex]
+         break
+      endif
+   endfor
+endfunction " >>>
