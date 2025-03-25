@@ -11,6 +11,7 @@ packadd helptoc
 " packadd comment
 " packadd justify
 " packadd termdebug
+" highlight-yank
 " >>>
 
 " functions <<<
