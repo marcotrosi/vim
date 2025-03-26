@@ -5,14 +5,22 @@
 "                  marcotrosi
 
 " plugins <<<
+" vim installation <<<
 packadd cfilter
 packadd helptoc
-" packadd lsp
 " packadd matchit
 " packadd comment
 " packadd justify
 " packadd termdebug
 " packadd highlight-yank
+" >>>
+" third party <<<
+packadd align
+packadd colorizer
+" packadd lsp
+" >>>
+" my own <<<
+" >>>
 " >>>
 
 " functions <<<
