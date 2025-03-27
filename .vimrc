@@ -2866,11 +2866,6 @@ augroup END
 let g:colorizer_auto_color = 0
 let g:colorizer_colornames = 0
 " >>>
-" wildfire <<<
-" let g:wildfire_fuel_map  = "<ENTER>"
-" let g:wildfire_water_map = "<BS>"
-let g:wildfire_objects   = split("iw,iW,ip,i),a),i],a],i},a},i',a',i\",a\",it", ",")
-" >>>
 " align <<<
 let g:DrChipTopLvlMenu= "&Plugins.&Align."
 " >>>
