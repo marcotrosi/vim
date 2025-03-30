@@ -17,11 +17,14 @@ packadd helptoc
 " third party <<<
 packadd align
 packadd colorizer
+packadd colorx
 packadd cycle
 packadd exchange
 packadd markdown
+packadd renamer
 packadd surround
 packadd tcomment
+packadd tobase
 " packadd lsp
 " >>>
 " my own <<<
