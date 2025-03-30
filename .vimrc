@@ -17,6 +17,7 @@ packadd helptoc
 " third party <<<
 packadd align
 packadd colorizer
+packadd exchange
 packadd markdown
 packadd surround
 packadd tcomment
