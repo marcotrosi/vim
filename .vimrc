@@ -22,6 +22,7 @@ packadd cycle
 packadd exchange
 packadd markdown
 packadd renamer
+packadd snipmate
 packadd surround
 packadd tcomment
 packadd tobase
