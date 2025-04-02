@@ -623,44 +623,45 @@ function! ShortenString(string, width, ...)
 endfunction " >>>
 
 " balloon & sign <<<
-let g:LuaExe="lua"
-let g:MsgDir=$Vim."\\vimfiles\\messages\\msg"
-let g:MsgFile=$Vim."\\vimfiles\\messages\\messages"
-
-let g:BalloonData=$Vim."\\vimfiles\\messages\\balloondata"
-let g:BalloonText=$Vim."\\vimfiles\\messages\\balloontext"
-let g:BalloonScript=g:LuaExe." ".$Vim."\\vimfiles\\messages\\balloonscript ".g:BalloonData." ".g:BalloonText." ".g:MsgFile
+" let g:LuaExe="lua"
+" let g:MsgDir=$Vim."\\vimfiles\\messages\\msg"
+" let g:MsgFile=$Vim."\\vimfiles\\messages\\messages"
+"
+" let g:BalloonData=$Vim."\\vimfiles\\messages\\balloondata"
+" let g:BalloonText=$Vim."\\vimfiles\\messages\\balloontext"
+" let g:BalloonScript=g:LuaExe." ".$Vim."\\vimfiles\\messages\\balloonscript ".g:BalloonData." ".g:BalloonText." ".g:MsgFile
 
 function! Balloon() " <<<
-   let balloondata = ['return', '{']
-   call add(balloondata, "  ['filepath']    = [[" . expand('%:p')   . "]],")
-   call add(balloondata, "  ['filedir']     = [[" . expand('%:p:h') . "]],")
-   call add(balloondata, "  ['filename']    = [[" . expand('%:t')   . "]],")
-   call add(balloondata, "  ['fileext']     = [[" . expand('%:e')   . "]],")
-   call add(balloondata, "  ['cwd']         = [[" . getcwd()        . "]],")
-   call add(balloondata, "  ['line']        = [[" . v:beval_lnum    . "]],")
-   call add(balloondata, "  ['column']      = [[" . v:beval_col     . "]],")
-   call add(balloondata, "  ['text']        = [[" . v:beval_text    . "]],")
-   call add(balloondata, "}")
-   call writefile(balloondata, g:BalloonData)
-   call system(g:BalloonScript)
-   if filereadable(g:BalloonText)
-      let l:text = join(readfile(g:BalloonText), "\n")
-      call delete(g:BalloonText)
-   else
-      let l:text = 'balloonscript error: the file balloontext does not exist'
-   endif
-   return l:text
+   " let balloondata = ['return', '{']
+   " call add(balloondata, "  ['filepath']    = [[" . expand('%:p')   . "]],")
+   " call add(balloondata, "  ['filedir']     = [[" . expand('%:p:h') . "]],")
+   " call add(balloondata, "  ['filename']    = [[" . expand('%:t')   . "]],")
+   " call add(balloondata, "  ['fileext']     = [[" . expand('%:e')   . "]],")
+   " call add(balloondata, "  ['cwd']         = [[" . getcwd()        . "]],")
+   " call add(balloondata, "  ['line']        = [[" . v:beval_lnum    . "]],")
+   " call add(balloondata, "  ['column']      = [[" . v:beval_col     . "]],")
+   " call add(balloondata, "  ['text']        = [[" . v:beval_text    . "]],")
+   " call add(balloondata, "}")
+   " call writefile(balloondata, g:BalloonData)
+   " call system(g:BalloonScript)
+   " if filereadable(g:BalloonText)
+   "    let l:text = join(readfile(g:BalloonText), "\n")
+   "    call delete(g:BalloonText)
+   " else
+   "    let l:text = 'balloonscript error: the file balloontext does not exist'
+   " endif
+   " return l:text
+   return 'foobar'
 endfunction " >>>
 
-let g:SignVimFile=$Vim."\\vimfiles\\messages\\signvimfile"
-let g:SignScript=g:LuaExe." ".$Vim."\\vimfiles\\messages\\signscript ".g:SignVimFile." ".g:MsgDir." ".g:MsgFile
+" let g:SignVimFile=$Vim."\\vimfiles\\messages\\signvimfile"
+" let g:SignScript=g:LuaExe." ".$Vim."\\vimfiles\\messages\\signscript ".g:SignVimFile." ".g:MsgDir." ".g:MsgFile
 
 function! Sign() " <<<
-   sign unplace *
-   call system(g:SignScript)
-   " sign place 1 line=10 name=W file=C:\LegacyApp\_my\tools\vim\.vimrc
-   exe 'source '.g:SignVimFile
+   " sign unplace *
+   " call system(g:SignScript)
+   " " sign place 1 line=10 name=W file=C:\LegacyApp\_my\tools\vim\.vimrc
+   " exe 'source '.g:SignVimFile
 endfunction " >>>
 " >>>
 
@@ -1542,7 +1543,7 @@ function! PasteReg(direction)
 endfunction " >>>
 
 " diff registers <<<
-function DiffReg(regl, regr)
+function! DiffReg(regl, regr)
    let l:Left = '/tmp/left.txt'
    let l:Right = '/tmp/right.txt'
    call writefile(getreg(a:regl, 1, 1), l:Left)
@@ -1676,7 +1677,7 @@ function! MatchCol(...) " parameters are trim, column, separator and all are opt
    call setreg('/', l:Pattern)
 endfunction
 
-function MatchColToggleTrim()
+function! MatchColToggleTrim()
    if g:MatchColTrm == ''
       let g:MatchColTrm = '!'
    else
@@ -1685,7 +1686,7 @@ function MatchColToggleTrim()
    call MatchCol()
 endfunction
 
-function MatchColNext()
+function! MatchColNext()
    let g:MatchColNum = g:MatchColNum + 1
    if g:MatchColNum == 0
       let g:MatchColNum = 1
@@ -1693,7 +1694,7 @@ function MatchColNext()
    call MatchCol()
 endfunction
 
-function MatchColPrev()
+function! MatchColPrev()
    let g:MatchColNum = g:MatchColNum - 1
    if g:MatchColNum == 0
       let g:MatchColNum = -1
@@ -1701,7 +1702,7 @@ function MatchColPrev()
    call MatchCol()
 endfunction
 
-function MatchColSetSep(sep)
+function! MatchColSetSep(sep)
    let g:MatchColSep = a:sep
    call MatchCol()
 endfunction
@@ -2415,7 +2416,7 @@ command! -nargs=+ -bang G call ForEach(<q-bang>, <q-args>)
 " set vartabstop <<<
 let s:VarTabs = []
 
-function VarTabDetermineTabs() range
+function! VarTabDetermineTabs() range
    let s:VarTabs = []
    let l:LineNum = a:firstline
    while v:true
@@ -2433,7 +2434,7 @@ function VarTabDetermineTabs() range
    call VarTabSetValues()
 endfunction
 
-function VarTabDetermineColumn()
+function! VarTabDetermineColumn()
    let l:Line   = getline('.')
    let l:CurCol = getpos('.')[2]
    let l:Column = 0
@@ -2450,17 +2451,17 @@ function VarTabDetermineColumn()
    return l:Column
 endfunction
 
-function VarTabSetValues()
+function! VarTabSetValues()
    call execute("set vartabstop=" .. join(s:VarTabs,','))
 endfunction
 
-function VarTabIncreaseColumn(count)
+function! VarTabIncreaseColumn(count)
      let l:Column = VarTabDetermineColumn()
      let s:VarTabs[l:Column] = s:VarTabs[l:Column] + a:count
      call VarTabSetValues()
 endfunction
 
-function VarTabDecreaseColumn(count)
+function! VarTabDecreaseColumn(count)
      let l:Column = VarTabDetermineColumn()
      let s:VarTabs[l:Column] = s:VarTabs[l:Column] - a:count
      if s:VarTabs[l:Column] < 1
@@ -2469,7 +2470,7 @@ function VarTabDecreaseColumn(count)
      call VarTabSetValues()
 endfunction
 
-function VarTabClearTabs()
+function! VarTabClearTabs()
    let s:VarTabs = []
    call VarTabSetValues()
 endfunction
@@ -2664,7 +2665,7 @@ endfunction
 nnoremap } :call NextParagraph()<CR>
 " >>>
 " get compiler include search paths <<<
-function GetCompilerIncludeSearchPaths()
+function! GetCompilerIncludeSearchPaths()
    let l:Out = systemlist('echo | clang -xc -E -v -')
    let l:PathLineMatches = matchstrlist(l:Out, '^ \(/\S\+\)', {'submatches': v:true})
    let l:Paths = []
@@ -2754,7 +2755,7 @@ set shiftwidth=0
 
 set backspace=indent,eol,start
 set backupdir=~/.vim/backupdir,/tmp
-"set balloonexpr=Balloon()
+set balloonexpr=Balloon()
 set belloff=all
 set complete=.,w,b,u
 " set complete=.,w,b,u,t,i
