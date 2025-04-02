@@ -2950,16 +2950,6 @@ xnoremap öa :Align<SPACE>
 nnoremap öa vip:Align<SPACE>
 " >>>
 " Increment <<<
-" requires an @ character
-" for visual block the old way should be the goal
-" xnoremap öi c@<ESC>gv:Inc s1 i1<CR>
-" xnoremap öI c@<ESC>gv:Inc s0 i1<CR>
-" let i=0 | '<,'>g/^/ s/@/\=i/ | let i+=1
-" :map <expr> <C-X> mode() ==# "V" ? ... : ...
-xnoremap öi :Inc s1 i1<CR>
-xnoremap öI :Inc s0 i1<CR>
-nnoremap öi vip:Inc s1 i1<CR>
-nnoremap öI vip:Inc s0 i1<CR>
 nnoremap ++ <C-a>
 nnoremap -- <C-x>
 " >>>
