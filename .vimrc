@@ -8,7 +8,7 @@
 " vim installation <<<
 packadd cfilter
 packadd helptoc
-" packadd matchit
+packadd matchit
 " packadd comment
 " packadd justify
 " packadd termdebug
