@@ -27,7 +27,8 @@ packadd tcomment
 packadd tobase
 " packadd lsp
 " >>>
-" my own <<<
+" my plugins <<<
+packadd panel
 " >>>
 " >>>
 
