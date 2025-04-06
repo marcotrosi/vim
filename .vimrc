@@ -1662,7 +1662,7 @@ function! SelectMenuPopupMenuCustomFilter()
       else
          call popup_close(a:id, -1)
       endif
-		return v:true
+      return v:true
    endfunction
 
    call popup_menu(l:NumEntries, {'callback':'TriggerMenu2', 'filter':'CustomFilter'})
@@ -1688,12 +1688,12 @@ function! SelectMenuPopupTerm()
    let l:WinID = popup_create(l:TermBufNum, {'minwidth': 50, 'minheight': 20})
 endfunction
 
-function! Popup_filter_fuzzy(list, callback) " <<<
-   let l:items = copy(a:list)
+function! Popup_filter_fuzzy(list, callback, config={}) " <<<
+   let l:items       = copy(a:list)
    let l:popup_winid = -1
-   let l:query = ''
-   let l:selected = 0
-   let l:filtered = copy(l:items)
+   let l:query       = ''
+   let l:selected    = 0
+   let l:filtered    = copy(l:items)
 
    function! PFF_UpdatePopupBuffer() closure " <<<
       echo l:query
@@ -1771,18 +1771,31 @@ function! Popup_filter_fuzzy(list, callback) " <<<
       return 0
    endfunction " >>>
 
-   let l:popup_winid = popup_create(l:filtered, {
-            \ 'minwidth': 50,
-            \ 'minheight': 20,
-            \ 'filter': function('PFF_HandleKeys'),
-            \ 'callback': function(a:callback),
-            \ 'cursorline': v:true,
-            \ 'border': [],
-            \ 'padding': [0,1,0,1],
-            \ 'title': ' Fuzzy Select ',
-            \ 'mapping': v:false,
-            \ 'wrap': v:false,
-            \})
+   let l:config = {
+      \ 'filter'     : function('PFF_HandleKeys'),
+      \ 'callback'   : function(a:callback),
+      \ 'cursorline' : v:true,
+      \ 'mapping'    : v:false,
+      \ 'wrap'       : v:false,
+      \ 'title'      : get(a:config, 'title'    , ' Fuzzy Select '),
+      \ 'minwidth'   : get(a:config, 'minwidth' , 25              ),
+      \ 'minheight'  : get(a:config, 'minheight', 15              ),
+      \ 'border'     : get(a:config, 'border'   , []              ),
+      \ 'padding'    : get(a:config, 'padding'  , [0,1,0,1]       ),
+   \}
+
+   let l:CfgKeys = ['line', 'col', 'pos', 'posinvert', 'textprop', 'textpropwin',
+      \ 'textpropid', 'fixed', 'flip', 'maxheight', 'maxwidth', 'drag', 'dragall',
+      \ 'resize', 'highlight', 'borderhighlight', 'borderchars', 'scrollbar',
+      \ 'scrollbarhighlight', 'thumbhighlight', 'zindex', 'mask']
+
+   for k in l:CfgKeys
+      if get(a:config, k, v:none) != v:none
+         let l:config[k] = get(a:config, k)
+      endif
+   endfor
+
+   let l:popup_winid = popup_create(l:filtered, l:config)
 endfunction " >>>
 
 function! SelectMenuFuzzy(popup_winid, result) " <<<
@@ -3190,7 +3203,7 @@ nnoremap <SPACE>h :call CycleColorscheme(0)<CR>
 nnoremap <SPACE>m :call SelectMenu()<CR>
 nnoremap <SPACE>M :popup Utils<CR>
 nnoremap <SPACE>u :call SelectMenuPopupTerm()<CR>
-nnoremap <SPACE>U :call Popup_filter_fuzzy(menu_info('Utils')['submenus'], 'SelectMenuFuzzy')<CR>
+nnoremap <SPACE>U :call Popup_filter_fuzzy(menu_info('Utils')['submenus'], 'SelectMenuFuzzy', {'title':' Utils '})<CR>
 
 "nnoremap ög
 nnoremap gö :call Grep('-F -w -s "' . expand('<cword>') . '" %')<CR>
