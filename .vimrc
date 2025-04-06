@@ -666,11 +666,11 @@ endfunction " >>>
 " >>>
 
 " clean up <<<
-function! CleanUp()
-   call delete(g:BalloonText)
-   call delete(g:MsgFile)
-   call delete(g:SignVimFile)
-endfunction
+" function! CleanUp()
+"    call delete(g:BalloonText)
+"    call delete(g:MsgFile)
+"    call delete(g:SignVimFile)
+" endfunction
 " >>>
 
 " change register type <<<
@@ -1511,7 +1511,7 @@ endfunction
 
 function! Edit(params)
    let l:TermBufNum = term_start(s:EditFilesCmd .. " " .. a:params, {'term_name':'edit files', 'hidden':0, 'term_finish':'close', 'norestore':1, 'vertical':1, 'exit_cb':'EditFiles'})
-   let l:WinID = popup_create(l:TermBufNum, {'minwidth': 50, 'minheight': 20})
+   " let l:WinID = popup_create(l:TermBufNum, {'minwidth': 50, 'minheight': 20})
 endfunction
 
 command! -nargs=? Edit call Edit(<q-args>)
@@ -1610,7 +1610,187 @@ function! SelectBuf()
    " let l:WinID = popup_create(l:TermBufNum, {'minwidth': 50, 'minheight': 20})
    " execute "b"..SelectedBuffer
 endfunction
+
+function! SelectBuffer()
+   silent! unmenu ]Buf
+   let l:i = 0 | while l:i <= bufnr('$') | let l:i = l:i + 1
+      if getbufvar(l:i, '&modifiable') && getbufvar(l:i, '&buflisted')
+         execute 'nmenu ]Buf.' .. escape(bufname(l:i), '. ') .. ' :b' .. l:i .. '<CR>'
+      endif
+   endwhile
+   popup ]Buf
+endfunction
 " >>>
+
+function! SelectMenu()
+   let l:Entries  = menu_info('Utils')['submenus']
+   let l:Selected = systemlist('sk --reverse', l:Entries)
+   redraw!
+   if len(l:Selected)
+      execute 'emenu Utils.' .. l:Selected[0]
+   endif
+endfunction
+
+function! SelectMenuPopupMenu()
+   let l:Entries = menu_info('Utils')['submenus']
+   function! TriggerMenu(id, result) closure
+      if a:result >= 1
+         execute 'emenu Utils.' .. l:Entries[a:result-1]
+      endif
+   endfunction
+   call popup_menu(l:Entries, {'callback':'TriggerMenu'})
+endfunction
+
+function! SelectMenuPopupMenuCustomFilter()
+   let l:Entries = menu_info('Utils')['submenus']
+   let l:NumEntries = []
+   let l:Cnt = 96 " one before lowercase a in ASCII table
+   for e in l:Entries
+      let l:Cnt = l:Cnt + 1
+      call add(NumEntries, "("..nr2char(l:Cnt)..") ".. e)
+   endfor
+
+   function! TriggerMenu2(id, result) closure
+      if (a:result >= 1) && (a:result <= len(l:Entries))
+         execute 'emenu Utils.' .. l:Entries[a:result-1]
+      endif
+   endfunction
+
+   function! CustomFilter(id, key)
+      if a:key =~ "^[a-z]$"
+         call popup_close(a:id, char2nr(a:key)-96)
+      else
+         call popup_close(a:id, -1)
+      endif
+		return v:true
+   endfunction
+
+   call popup_menu(l:NumEntries, {'callback':'TriggerMenu2', 'filter':'CustomFilter'})
+endfunction
+
+function! SelectMenuPopupTerm()
+
+   let l:TmpInFile  = tempname()
+   let l:TmpOutFile = tempname()
+
+   function! TriggerMenu(job, status) closure
+      let l:Selected = readfile(l:TmpOutFile)
+      if len(l:Selected)
+         execute 'emenu Utils.' .. l:Selected[0]
+      endif
+      call popup_close(l:WinID)
+      execute 'bwipeout! ' .. l:TermBufNum
+   endfunction
+
+   let l:Entries = menu_info('Utils')['submenus']
+   call writefile(l:Entries, l:TmpInFile)
+   let l:TermBufNum = term_start('sk --reverse', {'in_io':'file', 'in_name':l:TmpInFile, 'out_io': 'file', 'out_name': l:TmpOutFile, 'term_name':'select menu', 'hidden':1, 'term_finish':'close', 'norestore':1, 'vertical':1, 'exit_cb':'TriggerMenu'})
+   let l:WinID = popup_create(l:TermBufNum, {'minwidth': 50, 'minheight': 20})
+endfunction
+
+function! Popup_filter_fuzzy(list, callback) " <<<
+   let l:items = copy(a:list)
+   let l:popup_winid = -1
+   let l:query = ''
+   let l:selected = 0
+   let l:filtered = copy(l:items)
+
+   function! PFF_UpdatePopupBuffer() closure " <<<
+      echo l:query
+      let l:filtered = copy(l:items)
+      if !empty(l:query)
+         let l:filtered = matchfuzzy(l:items, l:query)
+         if empty(l:filtered)
+            let l:filtered = ['(no match)']
+         endif
+      endif
+      call popup_settext(l:popup_winid, l:filtered)
+      call win_execute(l:popup_winid, l:selected+1)
+   endfunction " >>>
+
+   function! PFF_HandleKeys(popup_winid, key) closure " <<<
+
+      if a:key ==# "\<ESC>"
+         if empty(l:query)
+            call popup_close(a:popup_winid, -1)
+            return 1
+         endif
+         let l:query = ''
+         let l:selected = 0
+         call PFF_UpdatePopupBuffer()
+         return 1
+      endif
+
+      if a:key ==# "\<C-u>"
+         let l:query = ''
+         let l:selected = 0
+         call PFF_UpdatePopupBuffer()
+         return 1
+      endif
+
+      " Handle Enter
+      if a:key ==# "\<CR>"
+         let l:choice = get(l:filtered, l:selected, '')
+         call popup_close(a:popup_winid, l:choice)
+         return 1
+      endif
+
+      " Handle backspace
+      if a:key ==# "\<BS>" || a:key ==# "\<C-H>"
+         let l:query = l:query[:-2]
+         let l:selected = 0
+         call PFF_UpdatePopupBuffer()
+         return 1
+      endif
+
+      " Navigation
+      if a:key ==# "\<C-n>" || a:key ==# "\<C-j>"
+         let l:selected = min([l:selected + 1, len(l:filtered) - 1])
+         call win_execute(a:popup_winid, l:selected+1)
+         return 1
+      endif
+      if a:key ==# "\<C-p>" || a:key ==# "\<C-k>"
+         let l:selected = max([l:selected - 1, 0])
+         call win_execute(a:popup_winid, l:selected+1)
+         return 1
+      endif
+
+      " Accept character input
+      if strlen(a:key) == 1
+         let l:query .= a:key
+         let l:selected = 0
+         call PFF_UpdatePopupBuffer()
+         return 1
+      endif
+
+      if a:key ==# "\<80><fd>"
+         return 1 " just silently ignore it
+      endif
+
+      " Unhandled key
+      return 0
+   endfunction " >>>
+
+   let l:popup_winid = popup_create(l:filtered, {
+            \ 'minwidth': 50,
+            \ 'minheight': 20,
+            \ 'filter': function('PFF_HandleKeys'),
+            \ 'callback': function(a:callback),
+            \ 'cursorline': v:true,
+            \ 'border': [],
+            \ 'padding': [0,1,0,1],
+            \ 'title': ' Fuzzy Select ',
+            \ 'mapping': v:false,
+            \ 'wrap': v:false,
+            \})
+endfunction " >>>
+
+function! SelectMenuFuzzy(popup_winid, result) " <<<
+   if a:result == -1
+      return
+   endif
+   execute 'emenu Utils.' .. a:result
+endfunction " >>>
 
 " edit old files <<<
 let s:OldFilesPre = '/tmp/o_pre.tmp'
@@ -2850,7 +3030,7 @@ augroup VIMRC
    autocmd BufLeave makefile set expandtab
 
    autocmd VimEnter * exec 'set path+=' .. GetCompilerIncludeSearchPaths()
-   autocmd VimLeavePre * call CleanUp()
+   " autocmd VimLeavePre * call CleanUp()
    autocmd ColorScheme * call DefMatchColors() " TODO temporary til part of colorschemes
 
    autocmd CmdwinEnter * map <buffer> <S-CR> <C-c><C-e>
@@ -2993,6 +3173,7 @@ let g:FdHint="fd [options] [pattern] [path, ...]\n
 " rd   | none        |RD            |restore directory'                      done
 
 nnoremap <SPACE>b :call SelectBuf()<CR>
+nnoremap <SPACE>B :call SelectBuffer()<CR>
 " nnoremap <SPACE>t jump to tag fuzzy
 " nnoremap <SPACE>p open session fuzzy
 nnoremap <SPACE>r :silent call PasteReg('p')<CR>
@@ -3006,6 +3187,10 @@ nnoremap <SPACE>E :echo g:FdHint<CR>:Edit<SPACE>
 nnoremap <SPACE>g :echo g:RgHint<CR>:Grep<SPACE>
 nnoremap <SPACE>G :echo g:RgHint<CR>:GrepBuffers<SPACE>
 nnoremap <SPACE>h :call CycleColorscheme(0)<CR>
+nnoremap <SPACE>m :call SelectMenu()<CR>
+nnoremap <SPACE>M :popup Utils<CR>
+nnoremap <SPACE>u :call SelectMenuPopupTerm()<CR>
+nnoremap <SPACE>U :call Popup_filter_fuzzy(menu_info('Utils')['submenus'], 'SelectMenuFuzzy')<CR>
 
 "nnoremap ög
 nnoremap gö :call Grep('-F -w -s "' . expand('<cword>') . '" %')<CR>
