@@ -3542,6 +3542,9 @@ nnoremap gA :call GetHighlightGroup()<CR>
 nnoremap gG ggVG
 nnoremap yY :YankSearchMatches<CR>
 nnoremap g. @:
+nnoremap ä! :call append(0, ["#!/usr/bin/env bash", "set -euxo pipefail", "IFS=$'\\n\\t'"])<CR>
+inoremap <C-CR> <ESC>:r!<C-r><C-l><CR>o
+nnoremap g! :r!<C-r><C-l><CR>
 nnoremap g: :<C-r><C-l><CR>
 xnoremap g: "zy:<C-r>z<CR>
 nnoremap gp `[v`]
@@ -3563,7 +3566,7 @@ nnoremap Y y$
 xnoremap Y "+y
 nnoremap <C-p> "+p
 xnoremap <C-p> "+p
-xnoremap <silent> P p:call setreg('"', getreg('0'), getregtype('0'))<CR>
+" xnoremap <silent> P p:call setreg('"', getreg('0'), getregtype('0'))<CR>
 " xnoremap P pgvy
 nnoremap U <C-R>
 nnoremap dm :delm! \| delm A-Z0-9<>\" \| echo "all marks deleted"<CR>
