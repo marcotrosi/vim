@@ -2474,8 +2474,8 @@ command! Run call RunScript()
 function! HighlightTags()
    " syntax clear MyFunction
    " syntax clear MyType
-   highlight link MyFunction Function
-   highlight link MyType Type
+   highlight! link MyFunction Function
+   highlight! link MyType     Type
    let l:TagList = taglist(".")
    for t in l:TagList
       if t['kind'] == 'function'
@@ -2869,6 +2869,23 @@ function! GetCompilerIncludeSearchPaths()
    return join(l:Paths, ',')
 endfunction
 " >>>
+function! ToggleAscii()
+  let l:word = expand('<cword>')
+
+  " check if it's a number
+  if l:word =~ '^\d\+$'
+    let l:num = str2nr(l:word)
+    if l:num >= 0 && l:num <= 255
+      execute "normal! ciw" . nr2char(l:num)
+    endif
+  else
+    " assume single character
+    if strlen(l:word) == 1
+      let l:num = char2nr(l:word)
+      execute "normal! s" . l:num
+    endif
+  endif
+endfunction
 " >>>
 " >>>
 
@@ -2963,6 +2980,7 @@ set errorformat=%f:%l:%c:\ %m
 set errorformat+=%f:%l:\ %m
 set errorformat+=luac:\ %f:%l:\ %m
 set errorformat+=%f\ %l\ %m
+set fileencoding=utf-8
 set fillchars=vert:│,fold:─
 set foldmarker=<<<,>>>
 set foldmethod=marker
@@ -3403,11 +3421,12 @@ inoremap äw <C-o>:let g:UserCompletionFunc=0<CR><C-x><C-u>
 inoremap äz <C-o>:let g:UserCompletionFunc=1<CR><C-x><C-u>
 inoremap äe <C-o>:let g:UserCompletionFunc=2<CR><C-x><C-u>
 inoremap äE <C-o>:let g:UserCompletionFunc=3<CR><C-x><C-u>
+inoremap äm <C-o>:let g:UserCompletionFunc=4<CR><C-x><C-u>
 " insert timestamps
 inoremap äT <C-R>=InsertTimeStamp()<CR>
 " >>>
 " Cycle Settings <<<
-" nnoremap +a
+nnoremap +a :call ToggleAscii()<CR>
 " nnoremap -a
 nnoremap +b :silent call CycleBase()<CR>
 " nnoremap -b
@@ -3578,7 +3597,7 @@ nnoremap öm :call Make()<CR>
 nnoremap öc :call PanelClose()<CR>
 nnoremap zq :qa!<CR>
 nnoremap cq :%s///gn<CR>
-nnoremap cQ :%s///gn<CR>
+nnoremap dS :%s///g<CR>
 inoremap <S-SPACE> <ESC>:call EvalDigraph()<CR>a
 nnoremap <S-SPACE> i<SPACE><ESC>l
 nnoremap <S-CR> o<ESC>0D
@@ -3852,9 +3871,8 @@ endif
 " >>>
 
 " statusline <<<
-set statusline=%#SLOrg#CD=%#SLNrm#%{getcwd()}%=\ 
-set statusline+=%#SLYlw#SESSION=%#SLNrm#%{GetFileName(v:this_session)}\ 
-set statusline+=%#SLRed#\ PERM=%#SLNrm#%{getfperm(expand('%'))}\ 
+set statusline=%#SLYlw#CD=%#SLNrm#%{getcwd()}%=%#SLBlu#FILE=%#SLNrm#%f\ 
+set statusline+=%@%#SLRed#PERM=%#SLNrm#%{getfperm(expand('%'))}\ 
 set statusline+=%#SLRed#FORMAT=%#SLNrm#%{&ff}\ 
 set statusline+=%#SLRed#TYPE=%#SLNrm#%Y\ 
 set statusline+=%#SLPpl#SPELL=%#SLNrm#%{&spelllang}\ 
@@ -3862,6 +3880,9 @@ set statusline+=%#SLGrn#LINE=%#SLNrm#%l/%L(%p%%)\
 set statusline+=%#SLGrn#COL=%#SLNrm#%v\ 
 set statusline+=%#SLGrn#BYTE=%#SLNrm#%o\ 
 set statusline+=%#SLBlu#XTAB=%#SLNrm#%{&expandtab}\ 
+set statusline+=%#SLYlw#SESSION=%#SLNrm#%{GetFileName(v:this_session)}\ 
+
+set statuslineopt=maxheight:3
 
 " function! GetGitBranch()
 "    if isdirectory("./.git/")
