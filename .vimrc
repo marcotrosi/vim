@@ -1485,7 +1485,7 @@ endif
 " >>>
 
 " change directory <<<
-" command! -nargs=? CD call system('start /wait cmd /c "fd -t d '.<q-args>.' | fzf --reverse > D:\temp\fzf.out || del D:\temp\fzf.out"') | if filereadable('D:\temp\fzf.out') | call chdir(readfile('D:\temp\fzf.out', '', 1)[0]) | endif
+" command! -nargs=? CD call system('start /wait cmd /c "fd -t d '.<q-args>.' | fzf --layout=reverse > D:\temp\fzf.out || del D:\temp\fzf.out"') | if filereadable('D:\temp\fzf.out') | call chdir(readfile('D:\temp\fzf.out', '', 1)[0]) | endif
 function! ChangeDir(j, s)
    if filereadable(s:ChangeDirTmp)
       call chdir(readfile(s:ChangeDirTmp, '', 1)[0])
@@ -1501,7 +1501,7 @@ command! -nargs=? CD call CD()
 " >>>
 
 " edit files <<<
-" command! -nargs=? Edit call system('start /wait cmd /c "fd -t f '.<q-args>.' | fzf -m --reverse > D:\temp\fzf.out || del D:\temp\fzf.out"') | if filereadable('D:\temp\fzf.out') | for fname in readfile('D:\temp\fzf.out') | silent execute ':e ' . fname | endfor | endif
+" command! -nargs=? Edit call system('start /wait cmd /c "fd -t f '.<q-args>.' | fzf -m --layout=reverse > D:\temp\fzf.out || del D:\temp\fzf.out"') | if filereadable('D:\temp\fzf.out') | for fname in readfile('D:\temp\fzf.out') | silent execute ':e ' . fname | endfor | endif
 function! EditFiles(j, s)
    wincmd p
    for fname in readfile(s:EditFilesTmp) 
@@ -1952,6 +1952,22 @@ function! NumToWord(x) abort
         return l:ten_part . l:one_part
     endif
 endfunction
+" >>>
+
+" edit TotalCommander files <<<
+let s:TCFiles= '/tmp/tc.tmp'
+function! EditTCFiles()
+   wincmd p
+   if !filereadable(s:TCFiles) 
+      return
+   endif
+   let l:bufnr = bufnr()
+   for fname in readfile(s:TCFiles) 
+      silent execute ':e ' . fname
+   endfor
+   silent execute ':b ' . bufnr
+endfunction
+command TC call EditTCFiles()
 " >>>
 
 " UNDER DEVELOPMENT <<<
@@ -2890,7 +2906,7 @@ function! GetCompilerIncludeSearchPaths()
    return join(l:Paths, ',')
 endfunction
 " >>>
-function! ToggleAscii()
+function! ToggleAscii() " <<<
   let l:word = expand('<cword>')
 
   " check if it's a number
@@ -2906,7 +2922,7 @@ function! ToggleAscii()
       execute "normal! s" . l:num
     endif
   endif
-endfunction
+endfunction " >>>
 " >>>
 " >>>
 
@@ -3006,7 +3022,7 @@ set fillchars=vert:│,fold:─
 set foldmarker=<<<,>>>
 set foldmethod=marker
 set formatoptions=jlnqr
-set grepprg=rg\ --vimgrep\ $*
+set grepprg=rg\ --vimgrep\ --glob='!tags'\ $*
 set grepformat=%f:%l:%c:%m
 set keywordprg=:help
 set laststatus=2
@@ -3204,11 +3220,11 @@ nnoremap <F12> :silent !ctags --langmap=c:.c.h -f .tags -R --tag-relative=yes --
 let g:RgHint="rg [options] pattern [path, ...]\n
          \-w whole words \| -i case insensitive \| -s case sensitive \| -v invert match\n
          \-F literally \| --hidden search hidden files \| -t type -T non-type \| -e regex\n
-         \--max-depth NUM \| -A NUM after \| -B NUM before \| -C NUM context"
+         \--max-depth NUM \| -A NUM after \| -B NUM before \| -C NUM context \| --no-ignore-vcs"
 
 let g:FdHint="fd [options] [pattern] [path, ...]\n
          \-s case sensitive \| -i case insensitive \| -g glob based \| -t type\n
-         \-F literally \| -H search hidden files \| -E exclude glob\n
+         \-F literally \| -H search hidden files \| -E exclude glob \| -I/--no-ignore\n
          \-d MAXDEPTH \| -S SIZE \| -e extension \| -a absolute paths"
 
 " sh   |map          |cmd           |desc
@@ -3704,7 +3720,7 @@ vmenu &Utils.&Slash2BackSlash :s;/;\\;ge<CR>
 " Windows <<<
 if has("win32")
 
-   command P call chdir('D:\casdef\td5')
+   command P call chdir('D:\casdev\td5')
 
    " let  FD=$VIM . '\vimfiles\bin\fd.exe'
    " let  RG=$VIM . '\vimfiles\bin\rg.exe'
