@@ -2488,9 +2488,30 @@ endfunction " >>>
 " git functions <<<
 " git get branch <<<
 function! GitGetBranch()
-   let l:branchName = system("git rev-parse --abbrev-ref HEAD 2>/dev/null | tr -d '\n'")
-   return l:branchName
+   " system("git rev-parse --abbrev-ref HEAD 2>/dev/null | tr -d '\n'")
+   " trim(system("git branch --show-current"))
+   silent let l:BranchName = trim(system("git symbolic-ref --short HEAD"))
+   if v:shell_error == 0
+      let g:GitBranchName = l:BranchName
+   else
+      let g:GitBranchName = ""
+   end
 endfunction " >>>
+autocmd DirChanged * call GitGetBranch()
+call GitGetBranch()
+
+" git get status <<<
+function! GitGetStatus()
+   silent let l:Status = systemlist("git symbolic-ref --short HEAD")
+   if v:shell_error == 0
+      let g:GitStatus = ""
+   else
+      let g:GitStatus = ""
+   end
+endfunction " >>>
+call GitGetStatus()
+
+nnoremap ög :call Panel('Git')<CR>
 " >>>
 " menu <<<
 let g:MenuUsePopup = v:false
@@ -3223,7 +3244,6 @@ nnoremap <SPACE>M :popup Utils<CR>
 nnoremap <SPACE>u :call SelectMenuPopupTerm()<CR>
 nnoremap <SPACE>U :call Popup_filter_fuzzy(menu_info('Utils')['submenus'], 'SelectMenuFuzzy', {'title':' Utils '})<CR>
 
-"nnoremap ög
 nnoremap gö :call Grep('-F -w -s "' . expand('<cword>') . '" %')<CR>
 nnoremap gÖ :call Grep('-F -i "' . expand('<cword>') . '" %')<CR>
 xnoremap gö "gy:call Grep('-F -w -s "' . getreg('g') . '" %')<CR>
@@ -3871,8 +3891,11 @@ endif
 " >>>
 
 " statusline <<<
-set statusline=%#SLYlw#CD=%#SLNrm#%{getcwd()}%=%#SLBlu#FILE=%#SLNrm#%f\ 
-set statusline+=%@%#SLRed#PERM=%#SLNrm#%{getfperm(expand('%'))}\ 
+set statusline=%#SLBlu#%#SLNrm#
+set statusline+=%@
+set statusline+=%#SLYlw#CD=%#SLNrm#%{getcwd()}%=%#SLBlu#FILE=%#SLNrm#%f\ 
+set statusline+=%@
+set statusline+=%#SLRed#PERM=%#SLNrm#%{getfperm(expand('%'))}\ 
 set statusline+=%#SLRed#FORMAT=%#SLNrm#%{&ff}\ 
 set statusline+=%#SLRed#TYPE=%#SLNrm#%Y\ 
 set statusline+=%#SLPpl#SPELL=%#SLNrm#%{&spelllang}\ 
@@ -3880,24 +3903,15 @@ set statusline+=%#SLGrn#LINE=%#SLNrm#%l/%L(%p%%)\
 set statusline+=%#SLGrn#COL=%#SLNrm#%v\ 
 set statusline+=%#SLGrn#BYTE=%#SLNrm#%o\ 
 set statusline+=%#SLBlu#XTAB=%#SLNrm#%{&expandtab}\ 
-set statusline+=%#SLYlw#SESSION=%#SLNrm#%{GetFileName(v:this_session)}\ 
+set statusline+=%=%#SLYlw#SESSION=%#SLNrm#%{GetFileName(v:this_session)}\ 
+set statusline+=%@
+set statusline+=%{g:PanelStatusLine}%=%#SLGrn#BRANCH=%#SLNrm#%{g:GitBranchName}\ %#SLPpl#STATUS=%#SLNrm#%{g:GitStatus}\ 
 
-set statuslineopt=maxheight:3
+set statuslineopt=maxheight:4
 
-" function! GetGitBranch()
-"    if isdirectory("./.git/")
-"       let g:GitBranch = trim(system("git branch --show-current"))
-"    else
-"       let g:GitBranch = "n.a."
-"    end
-" endfunction
-" autocmd DirChanged * call GetGitBranch()
-" call GetGitBranch()
-" set statusline+=%#SLBlu#BRANCH=%#SLNrm#%{g:GitBranch}
 " set statusline+=%#SLBlu#FONT=%#SLNrm#%{GetMyFont()}\ 
-
-" set statusline=%#org#CD=%#wht#%{getcwd()}%=%#ylw#SESSION=%#wht#%{GetFileName(v:this_session)}%#red#\ PERM=%#wht#%{getfperm(expand('%'))}\ %#red#FORMAT=%#wht#%{&ff}\ %#red#TYPE=%#wht#%Y\ %#ppl#SPELL=%#wht#%{&spelllang}\ %#grn#LINE=%#wht#%l/%L(%p%%)\ %#grn#COL=%#wht#%v\ %#grn#BYTE=%#wht#%o\ %#blu#DEC=%#wht#\%b\ %#blu#HEX=%#wht#\%B\ 
-" set statusline=%#org#Clip=%#wht#%{ShortenString(getreg('\"'),30,'r')}%=%#red#\ PERM=%#wht#%{getfperm(expand('%'))}\ %#red#FORMAT=%#wht#%{&ff}\ %#red#TYPE=%#wht#%Y\ \ %#ppl#SPELL=%#wht#%{&spelllang}\ \ %#grn#LINE=%#wht#%l/%L(%p%%)\ %#grn#COL=%#wht#%v\ %#grn#BYTE=%#wht#%o\ \ %#blu#DEC=%#wht#\%b\ %#blu#HEX=%#wht#\%B\ 
+" %#blu#DEC=%#wht#\%b\ %#blu#HEX=%#wht#\%B\ 
+" set statusline=%#org#Clip=%#wht#%{ShortenString(getreg('\"'),30,'r')}
 " >>>
 
 "                 | cycle up/down | confirm menu | popup | panel

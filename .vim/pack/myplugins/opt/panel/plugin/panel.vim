@@ -4,6 +4,7 @@
 "/Users/marcotrosi/.vim/plugin/buffers.vim
 "/Users/marcotrosi/.vim/plugin/review.vim
 "/Users/marcotrosi/.vim/plugin/cheat.vim
+"/Users/marcotrosi/.vim/plugin/git.vim
 
 " Things to consider when using this file
 " 1. provide a function that fills the panel with content and a second function with the same name in the beginning and
@@ -16,6 +17,7 @@ endif
 let PanelLoaded = 1
 
 let s:Panel = "Files" " init value in case PanelToggle is called first
+let g:PanelStatusLine = "[S]tatus [L]og [B]ranch"
 
 function! PanelClose() " <<<
    silent! bwipeout! __PANEL__
