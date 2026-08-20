@@ -1467,21 +1467,16 @@ nnoremap gl :call ShiftElement(0)<CR>
 " >>>
 
 " set up scripts <<<
-if has("win32")
-   " let s:ChangeDirCmd = '/Users/marcotrosi/Code/release/bin/c.sh'
-   " let s:ChangeDirTmp = '/tmp/c.tmp'
-else
-   let s:ChangeDirCmd    = '/Users/marcotrosi/.vim/bin/c.sh'
-   let s:ChangeDirTmp    = '/tmp/c.tmp'
-   let s:EditFilesCmd    = '/Users/marcotrosi/.vim/bin/e.sh'
-   let s:EditFilesTmp    = '/tmp/e.tmp'
-   let s:PasteRegCmd     = '/Users/marcotrosi/.vim/bin/r.sh'
-   let s:PasteRegTmp     = '/tmp/r.tmp'
-   let s:PasteRegPreTmp  = '/tmp/r_pre.tmp'
-   let s:SelectBufCmd    = '/Users/marcotrosi/.vim/bin/b.sh'
-   let s:SelectBufTmp    = '/tmp/b.tmp'
-   let s:SelectBufPreTmp = '/tmp/b_pre.tmp'
-endif
+let s:ChangeDirCmd    = expand('~') .. '/.vim/bin/c.sh'
+let s:ChangeDirTmp    = '/tmp/c.tmp'
+let s:EditFilesCmd    = expand('~') .. '/.vim/bin/e.sh'
+let s:EditFilesTmp    = '/tmp/e.tmp'
+let s:PasteRegCmd     = expand('~') .. '/.vim/bin/r.sh'
+let s:PasteRegTmp     = '/tmp/r.tmp'
+let s:PasteRegPreTmp  = '/tmp/r_pre.tmp'
+let s:SelectBufCmd    = expand('~') .. '/.vim/bin/b.sh'
+let s:SelectBufTmp    = '/tmp/b.tmp'
+let s:SelectBufPreTmp = '/tmp/b_pre.tmp'
 " >>>
 
 " change directory <<<
@@ -1809,7 +1804,7 @@ endfunction " >>>
 let s:OldFilesPre = '/tmp/o_pre.tmp'
 let s:OldFilesSel = '/tmp/o.tmp'
 let s:OldFilesCmd = '/tmp/o.sh'
-" let s:OldFilesCmd = '/Users/marcotrosi/.vim/bin/o.sh'
+" let s:OldFilesCmd = expand('~') .. '/.vim/bin/o.sh'
 
 function! EditOldFiles(j, s)
    wincmd p
