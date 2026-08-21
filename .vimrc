@@ -2497,8 +2497,21 @@ function! HighlightTags()
    endfor
 endfunction " >>>
 " git functions <<<
-" git get branch <<<
-function! GitGetBranch()
+nnoremap ög :call Panel('Git')<CR>
+let g:GitBranchName = ""
+let g:GitStatus     = ""
+let g:GitRepoCache  = {}
+
+function! IsGitRepo() " <<<
+   let l:cwd = getcwd()
+   if !has_key(g:GitRepoCache, l:cwd)
+      silent call system('git rev-parse --is-inside-work-tree')
+      let g:GitRepoCache[l:cwd] = (v:shell_error == 0)
+   endif
+   return g:GitRepoCache[l:cwd]
+endfunction " >>>
+
+function! GitGetBranch() " <<<
    " system("git rev-parse --abbrev-ref HEAD 2>/dev/null | tr -d '\n'")
    " trim(system("git branch --show-current"))
    silent let l:BranchName = trim(system("git symbolic-ref --short HEAD"))
@@ -2507,22 +2520,90 @@ function! GitGetBranch()
    else
       let g:GitBranchName = ""
    end
-endfunction " >>>
-autocmd DirChanged * call GitGetBranch()
-call GitGetBranch()
+endfunction
+" >>>
 
-" git get status <<<
-function! GitGetStatus()
-   silent let l:Status = systemlist("git symbolic-ref --short HEAD")
-   if v:shell_error == 0
+function! GitParseStatus(lines) " <<<
+
+   let l:Staged    = 0
+   let l:Modified  = 0
+   let l:Untracked = 0
+   let l:Conflicts = 0
+
+   for line in a:lines
+      let l:X = line[0:0] " Index
+      let l:Y = line[1:1] " Worktree
+
+      if l:X == '?' && l:Y == '?'
+         let l:Untracked += 1
+      elseif l:X == 'U' || l:Y == 'U'
+         let l:Conflicts += 1
+      else
+         if l:X != '.' && l:X != ' '
+            let l:Staged += 1
+         endif
+         if l:Y != '.' && l:Y != ' '
+            let l:Modified += 1
+         endif
+      endif
+   endfor
+
+   let l:Parts = []
+
+   if l:Conflicts | call add(l:Parts, '!' .. l:Conflicts) | endif
+   if l:Staged    | call add(l:Parts, '+' .. l:Staged)    | endif
+   if l:Modified  | call add(l:Parts, '∆' .. l:Modified)  | endif
+   if l:Untracked | call add(l:Parts, '?' .. l:Untracked) | endif
+
+   return len(l:Parts) ? join(l:Parts, ' ') : '✓'
+
+endfunction " >>>
+
+function! OnGitStatusOutput(channel, msg) " <<<
+   if !exists('g:GitStatusBuffer')
+      let g:GitStatusBuffer = []
+   endif
+   call add(g:GitStatusBuffer, a:msg)
+endfunction " >>>
+
+function! OnGitStatusExit(job, exitcode) " <<<
+   if a:exitcode != 0
       let g:GitStatus = ""
    else
-      let g:GitStatus = ""
-   end
+      let g:GitStatus = GitParseStatus(get(g:, 'GitStatusBuffer', []))
+   endif
+   let g:GitStatusBuffer = []
+   redrawstatus
 endfunction " >>>
-call GitGetStatus()
 
-nnoremap ög :call Panel('Git')<CR>
+function! GitGetStatus() " <<<
+   if exists('g:GitStatusJob') && job_status(g:GitStatusJob) == 'run'
+      return
+   endif
+
+   let g:GitStatusJob = job_start(['git', 'status', '--porcelain'], {
+      \ 'out_cb': function('OnGitStatusOutput'),
+      \ 'exit_cb': function('OnGitStatusExit'),
+      \ 'out_mode': 'nl',
+      \ })
+endfunction " >>>
+
+function! GitUpdateInfo()
+   if !IsGitRepo()
+      let g:GitStatus = ""
+      let g:GitBranchName = ""
+      return
+   endif
+
+   call GitGetBranch()
+   call GitGetStatus()
+endfunction
+
+augroup GitStatusline
+   autocmd!
+   autocmd VimEnter,DirChanged,BufWritePost,FocusGained * call GitUpdateInfo()
+augroup END
+
 " >>>
 " menu <<<
 let g:MenuUsePopup = v:false
@@ -2892,6 +2973,9 @@ nnoremap } :call NextParagraph()<CR>
 " get compiler include search paths <<<
 function! GetCompilerIncludeSearchPaths()
    let l:Out = systemlist('echo | clang -xc -E -v -')
+   if v:shell_error != 0
+      return ''
+   endif
    let l:PathLineMatches = matchstrlist(l:Out, '^ \(/\S\+\)', {'submatches': v:true})
    let l:Paths = []
    for p in l:PathLineMatches

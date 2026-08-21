@@ -96,3 +96,5 @@ endfunction " >>>
 
 function! GitOpen() " <<<
 endfunction " >>>
+
+" --------------------------
