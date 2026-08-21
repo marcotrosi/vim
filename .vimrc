@@ -2590,7 +2590,7 @@ endfunction " >>>
 
 function! GitUpdateInfo()
    if !IsGitRepo()
-      let g:GitStatus = ""
+      let g:GitStatus     = ""
       let g:GitBranchName = ""
       return
    endif
@@ -2599,9 +2599,10 @@ function! GitUpdateInfo()
    call GitGetStatus()
 endfunction
 
-augroup GitStatusline
+augroup GitStatusLine
    autocmd!
-   autocmd VimEnter,DirChanged,BufWritePost,FocusGained * call GitUpdateInfo()
+   autocmd VimEnter * call timer_start(0, {-> GitUpdateInfo()})
+   autocmd DirChanged,BufWritePost,FocusGained * call GitUpdateInfo()
 augroup END
 
 " >>>
