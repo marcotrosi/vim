@@ -16,8 +16,10 @@ if exists('PanelLoaded')
 endif
 let PanelLoaded = 1
 
-let s:Panel = "Files" " init value in case PanelToggle is called first
-let g:PanelStatusLine = "[S]tatus [L]og [B]ranch"
+" let s:Panel = "Files" " init value in case PanelToggle is called first
+if exists("g:PanelStatusLineUserMappings")
+   let g:PanelStatusLine = g:PanelStatusLineUserMappings
+end
 
 function! PanelClose() " <<<
    silent! bwipeout! __PANEL__

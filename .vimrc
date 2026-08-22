@@ -2496,116 +2496,6 @@ function! HighlightTags()
       endif
    endfor
 endfunction " >>>
-" git functions <<<
-nnoremap ög :call Panel('Git')<CR>
-let g:GitBranchName = ""
-let g:GitStatus     = ""
-let g:GitRepoCache  = {}
-
-function! IsGitRepo() " <<<
-   let l:cwd = getcwd()
-   if !has_key(g:GitRepoCache, l:cwd)
-      silent call system('git rev-parse --is-inside-work-tree')
-      let g:GitRepoCache[l:cwd] = (v:shell_error == 0)
-   endif
-   return g:GitRepoCache[l:cwd]
-endfunction " >>>
-
-function! GitGetBranch() " <<<
-   " system("git rev-parse --abbrev-ref HEAD 2>/dev/null | tr -d '\n'")
-   " trim(system("git branch --show-current"))
-   silent let l:BranchName = trim(system("git symbolic-ref --short HEAD"))
-   if v:shell_error == 0
-      let g:GitBranchName = l:BranchName
-   else
-      let g:GitBranchName = ""
-   end
-endfunction
-" >>>
-
-function! GitParseStatus(lines) " <<<
-
-   let l:Staged    = 0
-   let l:Modified  = 0
-   let l:Untracked = 0
-   let l:Conflicts = 0
-
-   for line in a:lines
-      let l:X = line[0:0] " Index
-      let l:Y = line[1:1] " Worktree
-
-      if l:X == '?' && l:Y == '?'
-         let l:Untracked += 1
-      elseif l:X == 'U' || l:Y == 'U'
-         let l:Conflicts += 1
-      else
-         if l:X != '.' && l:X != ' '
-            let l:Staged += 1
-         endif
-         if l:Y != '.' && l:Y != ' '
-            let l:Modified += 1
-         endif
-      endif
-   endfor
-
-   let l:Parts = []
-
-   if l:Conflicts | call add(l:Parts, '!' .. l:Conflicts) | endif
-   if l:Staged    | call add(l:Parts, '+' .. l:Staged)    | endif
-   if l:Modified  | call add(l:Parts, '∆' .. l:Modified)  | endif
-   if l:Untracked | call add(l:Parts, '?' .. l:Untracked) | endif
-
-   return len(l:Parts) ? join(l:Parts, ' ') : '✓'
-
-endfunction " >>>
-
-function! OnGitStatusOutput(channel, msg) " <<<
-   if !exists('g:GitStatusBuffer')
-      let g:GitStatusBuffer = []
-   endif
-   call add(g:GitStatusBuffer, a:msg)
-endfunction " >>>
-
-function! OnGitStatusExit(job, exitcode) " <<<
-   if a:exitcode != 0
-      let g:GitStatus = ""
-   else
-      let g:GitStatus = GitParseStatus(get(g:, 'GitStatusBuffer', []))
-   endif
-   let g:GitStatusBuffer = []
-   redrawstatus
-endfunction " >>>
-
-function! GitGetStatus() " <<<
-   if exists('g:GitStatusJob') && job_status(g:GitStatusJob) == 'run'
-      return
-   endif
-
-   let g:GitStatusJob = job_start(['git', 'status', '--porcelain'], {
-      \ 'out_cb': function('OnGitStatusOutput'),
-      \ 'exit_cb': function('OnGitStatusExit'),
-      \ 'out_mode': 'nl',
-      \ })
-endfunction " >>>
-
-function! GitUpdateInfo()
-   if !IsGitRepo()
-      let g:GitStatus     = ""
-      let g:GitBranchName = ""
-      return
-   endif
-
-   call GitGetBranch()
-   call GitGetStatus()
-endfunction
-
-augroup GitStatusLine
-   autocmd!
-   autocmd VimEnter * call timer_start(0, {-> GitUpdateInfo()})
-   autocmd DirChanged,BufWritePost,FocusGained * call GitUpdateInfo()
-augroup END
-
-" >>>
 " menu <<<
 let g:MenuUsePopup = v:false
 let g:PopupMenuChoice = -1
@@ -3112,7 +3002,7 @@ set nrformats=bin,hex
 " set omnifunc=syntaxcomplete#Complete
 " set omnifunc=ccomplete#Complete
 let g:c_syntax_for_h=1
-set pastetoggle=ä<Space>
+set pastetoggle=äp
 " use :checkpath to check if all included files can be found
 set path=.,,**
 set previewpopup="on"
@@ -3269,6 +3159,9 @@ let g:DrChipTopLvlMenu= "&Plugins.&Align."
 "         \   completionKinds: {},
 "         \   filterCompletionDuplicates: v:false,
 " 	\ })
+" >>>
+" panel <<<
+let g:PanelStatusLineUserMappings = "[öb]uffers [öf]iles [ög]it [öt]ags [öc]lose"
 " >>>
 " >>>
 " >>>
@@ -3614,7 +3507,7 @@ nnoremap äm :set cursorcolumn! cursorline!<CR>
 nnoremap än :set number! number?<CR>
 nnoremap äN :set relativenumber! relativenumber?<CR>
 " nnoremap äo
-nnoremap äp :set paste! paste?<CR>
+" nnoremap äp
 " nnoremap äq
 nnoremap är :set spell! spell?<CR>
 nnoremap äs :set hls!<CR>
@@ -3708,9 +3601,10 @@ nnoremap dm :delm! \| delm A-Z0-9<>\" \| echo "all marks deleted"<CR>
 nnoremap cd :cd %:p:h<CR>
 nnoremap cu :cd ..<CR>
 nnoremap yp :call YankPath()<CR>
-nnoremap öf :call Panel('Files')<CR>
-nnoremap öm :call Make()<CR>
 nnoremap öc :call PanelClose()<CR>
+nnoremap öf :call Panel('Files')<CR>
+nnoremap ög :call Panel('Git')<CR>
+nnoremap öm :call Make()<CR>
 nnoremap zq :qa!<CR>
 nnoremap cq :%s///gn<CR>
 nnoremap dS :%s///g<CR>
