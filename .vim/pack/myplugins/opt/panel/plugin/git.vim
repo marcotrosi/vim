@@ -9,11 +9,8 @@ let g:PanelStatusLine    = ""
 let g:GitBranchName      = ""
 let g:GitStatus          = ""
 let g:GitRepoCache       = {}
-let s:GitStatus          = []
 let s:GitStatusDisplayed = []
-let s:GitLog             = []
 let s:GitLogDisplayed    = []
-let s:GitBranch          = []
 let s:GitBranchDisplayed = []
 let s:CurrentView        = 1 "1=status, 2=log, 3=branch
 let s:GitLogCmd          = 'git log --pretty=tformat:"%h %cs%d %s" "@{upstream}"'
@@ -30,7 +27,6 @@ function! Git() " <<<
 
    if s:CurrentView == 1 " status <<<
       " clean lists
-      call filter(s:GitStatus         , 0)
       call filter(s:GitStatusDisplayed, 0)
 
       let l:Output = systemlist(s:GitStatusCmd)
@@ -45,22 +41,24 @@ function! Git() " <<<
 
    if s:CurrentView == 2 " log <<<
       " clean lists
-      call filter(s:GitLog         , 0)
       call filter(s:GitLogDisplayed, 0)
 
       let l:Output = systemlist(s:GitLogCmd)
 
-      for line in l:Output
-         let l:LongestLineLength  = max([l:LongestLineLength, strlen(l:line)])
-         call add(s:GitLogDisplayed, l:line)
-      endfor
+      if len(l:Output) == 0
+         call add(s:GitLogDisplayed, "all up-to-date")
+      else
+         for line in l:Output
+            let l:LongestLineLength  = max([l:LongestLineLength, strlen(l:line)])
+            call add(s:GitLogDisplayed, l:line)
+         endfor
+      endif
 
       return [min([l:MaxPanelWidth, l:LongestLineLength]), s:GitLogDisplayed, 1]
    end " >>>
 
    if s:CurrentView == 3 " branch <<<
       " clean lists
-      call filter(s:GitBranch         , 0)
       call filter(s:GitBranchDisplayed, 0)
 
       let l:Output = systemlist(s:GitBranchCmd)
