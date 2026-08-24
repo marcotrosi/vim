@@ -29,12 +29,16 @@ function! Git() " <<<
       " clean lists
       call filter(s:GitStatusDisplayed, 0)
 
-      let l:Output = systemlist(s:GitStatusCmd)
+      if !exists('g:GitStatusBuffer')
+         let g:GitStatusBuffer = []
+      endif
 
-      if len(l:Output) == 0
+      " let l:Output = systemlist(s:GitStatusCmd)
+
+      if len(g:GitStatusBuffer) == 0
          call add(s:GitStatusDisplayed, "all up-to-date")
       else
-         for line in l:Output
+         for line in g:GitStatusBuffer
             let l:LongestLineLength  = max([l:LongestLineLength, strlen(l:line)])
             call add(s:GitStatusDisplayed, l:line)
          endfor
@@ -101,7 +105,6 @@ endfunction " >>>
 " function! GitOpen() " <<<
 " endfunction " >>>
 
-" git functions <<<
 function! IsGitRepo() " <<<
    let l:cwd = getcwd()
    if !has_key(g:GitRepoCache, l:cwd)
@@ -172,7 +175,7 @@ function! OnGitStatusExit(job, exitcode) " <<<
    else
       let g:GitStatus = GitParseStatus(get(g:, 'GitStatusBuffer', []))
    endif
-   let g:GitStatusBuffer = []
+   " let g:GitStatusBuffer = []
    redrawstatus
 endfunction " >>>
 
@@ -189,7 +192,7 @@ function! GitGetStatus() " <<<
       \ })
 endfunction " >>>
 
-function! GitUpdateInfo()
+function! GitUpdateInfo() " <<<
    if !IsGitRepo()
       let g:GitStatus     = ""
       let g:GitBranchName = ""
@@ -198,12 +201,11 @@ function! GitUpdateInfo()
 
    call GitGetBranch()
    call GitGetStatus()
-endfunction
+endfunction " >>>
 
 augroup Git
    autocmd!
    autocmd VimEnter * call timer_start(0, {-> GitUpdateInfo()})
-   autocmd DirChanged,BufWritePost,FocusGained * call GitUpdateInfo()
+   autocmd DirChanged,BufWritePost,FocusGained,SessionLoadPost * call GitUpdateInfo()
 augroup END
 
-" >>>
