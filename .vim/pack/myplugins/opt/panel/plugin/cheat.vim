@@ -15,8 +15,9 @@ for cs in s:MyCheatSheetFiles
 endfor
 
 function! Cheat() " <<<
-   let l:PanelWidth = 20
-   return [l:PanelWidth, s:MyCheatSheets, 1]
+   let l:PanelWidth     = 20
+   let l:ToolStatusLine = ""
+   return [l:PanelWidth, s:MyCheatSheets, 1, l:ToolStatusLine]
 endfunction " >>>
 
 function! CheatSetup() " <<<

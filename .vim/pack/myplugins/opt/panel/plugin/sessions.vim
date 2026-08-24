@@ -9,7 +9,8 @@ endif
 
 function! Sessions() " <<<
 
-   let l:PanelWidth = 20
+   let l:PanelWidth     = 20
+   let l:ToolStatusLine = "session"
 
    let s:ListOfSessions = glob(s:SessionsPath . '/*', 0, 1)
    call filter(s:ListOfDisplayedSessions, 0)
@@ -22,7 +23,7 @@ function! Sessions() " <<<
       call add(s:ListOfDisplayedSessions, ' '.l:FileName)
    endfor
 
-   return [l:PanelWidth, s:ListOfDisplayedSessions, 1]
+   return [l:PanelWidth, s:ListOfDisplayedSessions, 1, l:ToolStatusLine]
 
 endfunction " >>>
 

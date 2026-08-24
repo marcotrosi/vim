@@ -22,8 +22,7 @@ function! Git() " <<<
    let l:MaxPanelWidth     = 60
    let l:MinPanelWidth     = 20
    let l:LongestLineLength = 20
-
-   " let g:PanelStatusLine = "[S]tatus [L]og [B]ranch"
+   let l:ToolStatusLine    = "[S]tatus [L]og [B]ranch"
 
    if s:CurrentView == 1 " status <<<
       " clean lists
@@ -44,7 +43,7 @@ function! Git() " <<<
          endfor
       endif
 
-      return [min([l:MaxPanelWidth, l:LongestLineLength]), s:GitStatusDisplayed, 1]
+      return [min([l:MaxPanelWidth, l:LongestLineLength]), s:GitStatusDisplayed, 1, l:ToolStatusLine]
    end " >>>
 
    if s:CurrentView == 2 " log <<<
@@ -58,7 +57,7 @@ function! Git() " <<<
          call add(s:GitLogDisplayed, l:line)
       endfor
 
-      return [min([l:MaxPanelWidth, l:LongestLineLength]), s:GitLogDisplayed, 1]
+      return [min([l:MaxPanelWidth, l:LongestLineLength]), s:GitLogDisplayed, 1, l:ToolStatusLine]
    end " >>>
 
    if s:CurrentView == 3 " branch <<<
@@ -72,7 +71,7 @@ function! Git() " <<<
          call add(s:GitBranchDisplayed, l:line)
       endfor
 
-      return [min([l:MaxPanelWidth, l:LongestLineLength]), s:GitBranchDisplayed, 1]
+      return [min([l:MaxPanelWidth, l:LongestLineLength]), s:GitBranchDisplayed, 1, l:ToolStatusLine]
    end " >>>
 endfunction " >>>
 
@@ -163,9 +162,6 @@ function! GitParseStatus(lines) " <<<
 endfunction " >>>
 
 function! OnGitStatusOutput(channel, msg) " <<<
-   if !exists('g:GitStatusBuffer')
-      let g:GitStatusBuffer = []
-   endif
    call add(g:GitStatusBuffer, a:msg)
 endfunction " >>>
 
@@ -175,13 +171,18 @@ function! OnGitStatusExit(job, exitcode) " <<<
    else
       let g:GitStatus = GitParseStatus(get(g:, 'GitStatusBuffer', []))
    endif
-   " let g:GitStatusBuffer = []
    redrawstatus
 endfunction " >>>
 
 function! GitGetStatus() " <<<
    if exists('g:GitStatusJob') && job_status(g:GitStatusJob) == 'run'
       return
+   endif
+
+   if !exists('g:GitStatusBuffer')
+      let g:GitStatusBuffer = []
+   else
+      call filter(g:GitStatusBuffer, 0)
    endif
 
    let g:GitStatus = "▓"

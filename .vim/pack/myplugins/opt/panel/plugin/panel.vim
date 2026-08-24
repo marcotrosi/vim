@@ -50,6 +50,8 @@ function! Panel(tool) " <<<
 
       call cursor(l:Data[2], 1)
 
+      let s:PanelStatusLineToolCommands = l:Data[3]
+
       " setlocal noshowcmd
       setlocal buftype=nofile
       setlocal bufhidden=wipe
@@ -100,3 +102,21 @@ function! PanelUpdate() " <<<
    setlocal nomodifiable
    call cursor(l:Data[2], 1)
 endfunction " >>>
+
+function! PanelSetStatusLine(enter)
+   if a:enter
+      let g:PanelStatusLine = s:PanelStatusLineToolCommands
+   else
+      if exists("g:PanelStatusLineUserMappings")
+         let g:PanelStatusLine = g:PanelStatusLineUserMappings
+      else
+         let g:PanelStatusLine = ""
+      end
+   endif
+endfunction
+
+augroup Panel
+   autocmd!
+   autocmd BufEnter,BufNew __PANEL__ call PanelSetStatusLine(v:true)
+   autocmd BufLeave __PANEL__ call PanelSetStatusLine(v:false)
+augroup END

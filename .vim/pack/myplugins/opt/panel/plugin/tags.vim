@@ -26,6 +26,7 @@ function! Tags() " <<<
    let s:ListOfTagLocations   = []
    let s:ListOfDocSections    = []
    let s:ListOfDocSecTypes    = [ 'chapter' , 'section' , 'subsection' , 'subsubsection' , 'l4subsection' , 'l5subsection' ]
+   let l:ToolStatusLine       = ""
 
    for tg in taglist('^')
       if index(s:ListOfDocSecTypes, tg.kind) != -1
@@ -95,7 +96,7 @@ function! Tags() " <<<
 
    " let l:Content = join(s:ListOfDisplayedLines, "\n")
    " return [40, l:Content, 1] " TODO detect longest tag and adjust panel width
-   return [40, s:ListOfDisplayedLines, 1] " TODO detect longest tag and adjust panel width
+   return [40, s:ListOfDisplayedLines, 1, l:ToolStatusLine] " TODO detect longest tag and adjust panel width
 endfunction " >>>
 
 function! TagsSetup() " <<<

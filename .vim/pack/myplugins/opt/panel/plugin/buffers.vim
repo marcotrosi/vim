@@ -8,6 +8,7 @@ function! Buffers() " <<<
    let l:LineNumOfActiveBuffer = 0
    let l:NumOfDisplayedBuffers = 0
    let l:LongestNameLength     = 20
+   let l:ToolStatusLine        = "buffers"
 
    " clean lists
    call filter(s:ListOfBuffers         , 0)
@@ -44,7 +45,7 @@ function! Buffers() " <<<
       endif
    endwhile
 
-   return [min([l:MaxPanelWidth, l:LongestNameLength]), s:ListOfDisplayedBuffers, l:LineNumOfActiveBuffer]
+   return [min([l:MaxPanelWidth, l:LongestNameLength]), s:ListOfDisplayedBuffers, l:LineNumOfActiveBuffer, l:ToolStatusLine]
 endfunction " >>>
 
 function! BuffersSetup() " <<<

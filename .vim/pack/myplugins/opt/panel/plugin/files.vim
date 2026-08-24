@@ -6,7 +6,9 @@ let s:GitHighlighting = v:false
 
 function! Files()  " <<<
 
-   let l:Content = []
+   let l:Content        = []
+   let l:ToolStatusLine = "files"
+
    call filter(s:ListOfPaths, 0)
    call s:GetDirContent(l:Content, s:TopDir, 0)
 
@@ -62,7 +64,7 @@ function! Files()  " <<<
       echo l:Messages
    endif
 
-   return [40, l:Content, 1]
+   return [40, l:Content, 1, l:ToolStatusLine]
 endfunction  " >>>
 
 function! FilesInit() " <<<
