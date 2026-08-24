@@ -31,10 +31,14 @@ function! Git() " <<<
 
       let l:Output = systemlist(s:GitStatusCmd)
 
-      for line in l:Output
-         let l:LongestLineLength  = max([l:LongestLineLength, strlen(l:line)])
-         call add(s:GitStatusDisplayed, l:line)
-      endfor
+      if len(l:Output) == 0
+         call add(s:GitStatusDisplayed, "all up-to-date")
+      else
+         for line in l:Output
+            let l:LongestLineLength  = max([l:LongestLineLength, strlen(l:line)])
+            call add(s:GitStatusDisplayed, l:line)
+         endfor
+      endif
 
       return [min([l:MaxPanelWidth, l:LongestLineLength]), s:GitStatusDisplayed, 1]
    end " >>>
@@ -45,14 +49,10 @@ function! Git() " <<<
 
       let l:Output = systemlist(s:GitLogCmd)
 
-      if len(l:Output) == 0
-         call add(s:GitLogDisplayed, "all up-to-date")
-      else
-         for line in l:Output
-            let l:LongestLineLength  = max([l:LongestLineLength, strlen(l:line)])
-            call add(s:GitLogDisplayed, l:line)
-         endfor
-      endif
+      for line in l:Output
+         let l:LongestLineLength  = max([l:LongestLineLength, strlen(l:line)])
+         call add(s:GitLogDisplayed, l:line)
+      endfor
 
       return [min([l:MaxPanelWidth, l:LongestLineLength]), s:GitLogDisplayed, 1]
    end " >>>
