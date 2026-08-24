@@ -16,7 +16,7 @@ let s:GitLogDisplayed    = []
 let s:GitBranch          = []
 let s:GitBranchDisplayed = []
 let s:CurrentView        = 1 "1=status, 2=log, 3=branch
-let s:GitLogCmd          = 'git log --pretty=tformat:"%h %cs%d %s"'
+let s:GitLogCmd          = 'git log --pretty=tformat:"%h %cs%d %s" "@{upstream}"'
 let s:GitStatusCmd       = 'git status --porcelain'
 let s:GitBranchCmd       = 'git for-each-ref --format="%(refname:short)" refs/heads/ refs/remotes/'
 
