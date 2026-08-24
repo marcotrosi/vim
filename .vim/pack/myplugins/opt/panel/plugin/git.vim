@@ -4,74 +4,102 @@
 "                -> git for-each-ref --format='%(if)%(HEAD)%(then)* %(else)  %(end)%(refname:short)' refs/heads/ refs/remotes/
 " current branch -> git symbolic-ref --short HEAD
 " git log        -> git log --pretty=tformat:"%h %cs%d %s"
+" git remote     -> git config --get-regexp '^remote\..*\.url$'
+" git tag        -> git for-each-ref --format='%(refname:short) %(objecttype)' refs/tags/
 
 let g:PanelStatusLine    = ""
 let g:GitBranchName      = ""
 let g:GitStatus          = ""
 let g:GitRepoCache       = {}
-let s:GitStatusDisplayed = []
-let s:GitLogDisplayed    = []
-let s:GitBranchDisplayed = []
+let s:GitLinesDisplayed  = []
 let s:CurrentView        = 1 "1=status, 2=log, 3=branch
 let s:GitLogCmd          = 'git log --pretty=tformat:"%h %cs%d %s" "@{upstream}"'
 let s:GitStatusCmd       = 'git status --porcelain'
 let s:GitBranchCmd       = 'git for-each-ref --format="%(refname:short)" refs/heads/ refs/remotes/'
+let s:GitRemoteCmd       = 'git config --get-regexp "^remote\..*\.url$"'
+let s:GitTagCmd          = 'git for-each-ref --format="%(refname:short) %(objecttype)" refs/tags/'
 
 function! Git() " <<<
 
    let l:MaxPanelWidth     = 60
    let l:MinPanelWidth     = 20
    let l:LongestLineLength = 20
-   let l:ToolStatusLine    = "[S]tatus [L]og [B]ranch"
+   let l:ToolStatusLine    = "[S]tatus [L]og [B]ranch [T]ag [R]emote"
 
    if s:CurrentView == 1 " status <<<
       " clean lists
-      call filter(s:GitStatusDisplayed, 0)
+      call filter(s:GitLinesDisplayed, 0)
 
       if !exists('g:GitStatusBuffer')
          let g:GitStatusBuffer = []
       endif
 
-      " let l:Output = systemlist(s:GitStatusCmd)
-
       if len(g:GitStatusBuffer) == 0
-         call add(s:GitStatusDisplayed, "all up-to-date")
+         call add(s:GitLinesDisplayed, "all up-to-date")
       else
          for line in g:GitStatusBuffer
             let l:LongestLineLength  = max([l:LongestLineLength, strlen(l:line)])
-            call add(s:GitStatusDisplayed, l:line)
+            call add(s:GitLinesDisplayed, l:line)
          endfor
       endif
 
-      return [min([l:MaxPanelWidth, l:LongestLineLength]), s:GitStatusDisplayed, 1, l:ToolStatusLine]
+      return [min([l:MaxPanelWidth, l:LongestLineLength]), s:GitLinesDisplayed, 1, l:ToolStatusLine]
    end " >>>
 
    if s:CurrentView == 2 " log <<<
       " clean lists
-      call filter(s:GitLogDisplayed, 0)
+      call filter(s:GitLinesDisplayed, 0)
 
       let l:Output = systemlist(s:GitLogCmd)
 
       for line in l:Output
          let l:LongestLineLength  = max([l:LongestLineLength, strlen(l:line)])
-         call add(s:GitLogDisplayed, l:line)
+         call add(s:GitLinesDisplayed, l:line)
       endfor
 
-      return [min([l:MaxPanelWidth, l:LongestLineLength]), s:GitLogDisplayed, 1, l:ToolStatusLine]
+      return [min([l:MaxPanelWidth, l:LongestLineLength]), s:GitLinesDisplayed, 1, l:ToolStatusLine]
    end " >>>
 
    if s:CurrentView == 3 " branch <<<
       " clean lists
-      call filter(s:GitBranchDisplayed, 0)
+      call filter(s:GitLinesDisplayed, 0)
 
       let l:Output = systemlist(s:GitBranchCmd)
 
       for line in l:Output
          let l:LongestLineLength  = max([l:LongestLineLength, strlen(l:line)])
-         call add(s:GitBranchDisplayed, l:line)
+         call add(s:GitLinesDisplayed, l:line)
       endfor
 
-      return [min([l:MaxPanelWidth, l:LongestLineLength]), s:GitBranchDisplayed, 1, l:ToolStatusLine]
+      return [min([l:MaxPanelWidth, l:LongestLineLength]), s:GitLinesDisplayed, 1, l:ToolStatusLine]
+   end " >>>
+
+   if s:CurrentView == 4 " tag <<<
+      " clean lists
+      call filter(s:GitLinesDisplayed, 0)
+
+      let l:Output = systemlist(s:GitTagCmd)
+
+      for line in l:Output
+         let l:LongestLineLength  = max([l:LongestLineLength, strlen(l:line)])
+         call add(s:GitLinesDisplayed, l:line)
+      endfor
+
+      return [min([l:MaxPanelWidth, l:LongestLineLength]), s:GitLinesDisplayed, 1, l:ToolStatusLine]
+   end " >>>
+
+   if s:CurrentView == 5 " remote <<<
+      " clean lists
+      call filter(s:GitLinesDisplayed, 0)
+
+      let l:Output = systemlist(s:GitRemoteCmd)
+
+      for line in l:Output
+         let l:LongestLineLength  = max([l:LongestLineLength, strlen(l:line)])
+         call add(s:GitLinesDisplayed, l:line)
+      endfor
+
+      return [min([l:MaxPanelWidth, l:LongestLineLength]), s:GitLinesDisplayed, 1, l:ToolStatusLine]
    end " >>>
 endfunction " >>>
 
@@ -83,6 +111,8 @@ function! GitSetup() " <<<
    map <silent> <nowait> <buffer> S :call GitStatus()<CR>
    map <silent> <nowait> <buffer> L :call GitLog()<CR>
    map <silent> <nowait> <buffer> B :call GitBranch()<CR>
+   map <silent> <nowait> <buffer> T :call GitTag()<CR>
+   map <silent> <nowait> <buffer> R :call GitRemote()<CR>
    " map <silent> <nowait> <buffer> o :call GitOpen()<CR>
 endfunction " >>>
 
@@ -98,6 +128,16 @@ endfunction " >>>
 
 function! GitBranch() " <<<
    let s:CurrentView = 3
+   call PanelUpdate()
+endfunction " >>>
+
+function! GitTag() " <<<
+   let s:CurrentView = 4
+   call PanelUpdate()
+endfunction " >>>
+
+function! GitRemote() " <<<
+   let s:CurrentView = 5
    call PanelUpdate()
 endfunction " >>>
 
