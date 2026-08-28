@@ -20,14 +20,15 @@ let g:GitStatus           = ""
 let g:GitRepoCache        = {}
 let s:GitLines            = []
 let s:GitLinesDisplayed   = []
-let s:GitLogCmd           = 'git log --pretty=tformat:"%H %h %cs%d %s" "@{upstream}"'
-let s:GitStatusCmd        = 'git status --porcelain'
-let s:GitBranchCmd        = 'git for-each-ref --format="%(refname:short)" refs/heads/ refs/remotes/'
-let s:GitRemoteCmd        = 'git config --get-regexp "^remote\..*\.url$"'
-let s:GitTagCmd           = 'git for-each-ref --format="%(refname:short) %(objecttype)" refs/tags/'
-let s:GitIsRepoCmd        = 'git rev-parse --is-inside-work-tree'
-let s:GitGetBranchCmd     = 'git symbolic-ref --short HEAD'
-let s:GitGetCommitInfoCmd = 'git log -1 --pretty=tformat:"%s" %s'
+const s:GitLogCmd           = 'git log --pretty=tformat:"%H %h %cs%d %s" "@{upstream}"'
+const s:GitStatusCmd        = 'git status --porcelain'
+const s:GitBranchCmd        = 'git for-each-ref --format="%(refname:short)" refs/heads/ refs/remotes/'
+const s:GitRemoteCmd        = 'git config --get-regexp "^remote\..*\.url$"'
+const s:GitTagCmd           = 'git for-each-ref --format="%(refname:short) %(objecttype)" refs/tags/'
+const s:GitIsRepoCmd        = 'git rev-parse --is-inside-work-tree'
+const s:GitGetBranchCmd     = 'git symbolic-ref --short HEAD'
+const s:GitGetCommitInfoCmd = 'git log -1 --pretty=tformat:"%s" %s'
+const s:ShowCommitInfoFormat= "%nrefs:    %D%ncommit:  %H%nparents: %P%n%nauthor name:   %an%nauthor e-mail: %ae%nauthor date:   %ad%n%ncommitter name:   %cn%ncommitter e-mail: %ce%ncommitter date:   %cd%n%nsubject: %s%n%nbody: %w(100,0,6)%b"
 
 function! Git() " <<<
 
@@ -268,7 +269,7 @@ function! s:GitGetCommitInfo(commit_id) " <<<
    if a:commit_id == ""
       return
    endif
-   let l:Output = systemlist(printf(s:GitGetCommitInfoCmd, "refs: %D%ncommit: %H%nparents: %P%n%nauthor name: %an%nauthor e-mail: %ae%nauthor date: %ad%n%ncommitter name: %cn%ncommitter e-mail: %ce%ncommitter date: %cd%n%nsubject: %s%nbody: %b", a:commit_id))
+   let l:Output = systemlist(printf(s:GitGetCommitInfoCmd, s:ShowCommitInfoFormat, a:commit_id))
    if v:shell_error == 0
       return l:Output
    else
