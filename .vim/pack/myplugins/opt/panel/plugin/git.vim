@@ -7,17 +7,27 @@
 " git remote     -> git config --get-regexp '^remote\..*\.url$'
 " git tag        -> git for-each-ref --format='%(refname:short) %(objecttype)' refs/tags/
 
-let g:PanelStatusLine    = ""
-let g:GitBranchName      = ""
-let g:GitStatus          = ""
-let g:GitRepoCache       = {}
-let s:GitLinesDisplayed  = []
-let s:CurrentView        = 1 "1=status, 2=log, 3=branch
-let s:GitLogCmd          = 'git log --pretty=tformat:"%h %cs%d %s" "@{upstream}"'
-let s:GitStatusCmd       = 'git status --porcelain'
-let s:GitBranchCmd       = 'git for-each-ref --format="%(refname:short)" refs/heads/ refs/remotes/'
-let s:GitRemoteCmd       = 'git config --get-regexp "^remote\..*\.url$"'
-let s:GitTagCmd          = 'git for-each-ref --format="%(refname:short) %(objecttype)" refs/tags/'
+const s:VIEW_STATUS = 1
+const s:VIEW_LOG    = 2
+const s:VIEW_BRANCH = 3
+const s:VIEW_TAG    = 4
+const s:VIEW_REMOTE = 5
+let   s:CurrentView = s:VIEW_STATUS
+
+let g:PanelStatusLine     = ""
+let g:GitBranchName       = ""
+let g:GitStatus           = ""
+let g:GitRepoCache        = {}
+let s:GitLines            = []
+let s:GitLinesDisplayed   = []
+let s:GitLogCmd           = 'git log --pretty=tformat:"%H %h %cs%d %s" "@{upstream}"'
+let s:GitStatusCmd        = 'git status --porcelain'
+let s:GitBranchCmd        = 'git for-each-ref --format="%(refname:short)" refs/heads/ refs/remotes/'
+let s:GitRemoteCmd        = 'git config --get-regexp "^remote\..*\.url$"'
+let s:GitTagCmd           = 'git for-each-ref --format="%(refname:short) %(objecttype)" refs/tags/'
+let s:GitIsRepoCmd        = 'git rev-parse --is-inside-work-tree'
+let s:GitGetBranchCmd     = 'git symbolic-ref --short HEAD'
+let s:GitGetCommitInfoCmd = 'git log -1 --pretty=tformat:"%s" %s'
 
 function! Git() " <<<
 
@@ -26,9 +36,10 @@ function! Git() " <<<
    let l:LongestLineLength = 20
    let l:ToolStatusLine    = "[S]tatus [L]og [B]ranch [T]ag [R]emote"
 
-   if s:CurrentView == 1 " status <<<
-      " clean lists
-      call filter(s:GitLinesDisplayed, 0)
+   call filter(s:GitLines         , 0)
+   call filter(s:GitLinesDisplayed, 0)
+
+   if s:CurrentView == s:VIEW_STATUS " <<<
 
       if !exists('g:GitStatusBuffer')
          let g:GitStatusBuffer = []
@@ -46,23 +57,20 @@ function! Git() " <<<
       return [min([l:MaxPanelWidth, l:LongestLineLength]), s:GitLinesDisplayed, 1, l:ToolStatusLine]
    end " >>>
 
-   if s:CurrentView == 2 " log <<<
-      " clean lists
-      call filter(s:GitLinesDisplayed, 0)
+   if s:CurrentView == s:VIEW_LOG " <<<
 
       let l:Output = systemlist(s:GitLogCmd)
 
       for line in l:Output
          let l:LongestLineLength  = max([l:LongestLineLength, strlen(l:line)])
-         call add(s:GitLinesDisplayed, l:line)
+         call add(s:GitLines         , strpart(l:line, 0, 40))
+         call add(s:GitLinesDisplayed, strpart(l:line, 41   ))
       endfor
 
       return [min([l:MaxPanelWidth, l:LongestLineLength]), s:GitLinesDisplayed, 1, l:ToolStatusLine]
    end " >>>
 
-   if s:CurrentView == 3 " branch <<<
-      " clean lists
-      call filter(s:GitLinesDisplayed, 0)
+   if s:CurrentView == s:VIEW_BRANCH " <<<
 
       let l:Output = systemlist(s:GitBranchCmd)
 
@@ -74,9 +82,7 @@ function! Git() " <<<
       return [min([l:MaxPanelWidth, l:LongestLineLength]), s:GitLinesDisplayed, 1, l:ToolStatusLine]
    end " >>>
 
-   if s:CurrentView == 4 " tag <<<
-      " clean lists
-      call filter(s:GitLinesDisplayed, 0)
+   if s:CurrentView == s:VIEW_TAG " <<<
 
       let l:Output = systemlist(s:GitTagCmd)
 
@@ -88,9 +94,7 @@ function! Git() " <<<
       return [min([l:MaxPanelWidth, l:LongestLineLength]), s:GitLinesDisplayed, 1, l:ToolStatusLine]
    end " >>>
 
-   if s:CurrentView == 5 " remote <<<
-      " clean lists
-      call filter(s:GitLinesDisplayed, 0)
+   if s:CurrentView == s:VIEW_REMOTE " <<<
 
       let l:Output = systemlist(s:GitRemoteCmd)
 
@@ -108,46 +112,56 @@ function! GitSetup() " <<<
    setlocal cursorline
    setlocal statusline=\ GIT
 
-   map <silent> <nowait> <buffer> S :call GitStatus()<CR>
-   map <silent> <nowait> <buffer> L :call GitLog()<CR>
-   map <silent> <nowait> <buffer> B :call GitBranch()<CR>
-   map <silent> <nowait> <buffer> T :call GitTag()<CR>
-   map <silent> <nowait> <buffer> R :call GitRemote()<CR>
-   " map <silent> <nowait> <buffer> o :call GitOpen()<CR>
+   nnoremap <silent> <nowait> <buffer> S :call <SID>GitStatus()<CR>
+   nnoremap <silent> <nowait> <buffer> L :call <SID>GitLog()<CR>
+   nnoremap <silent> <nowait> <buffer> B :call <SID>GitBranch()<CR>
+   nnoremap <silent> <nowait> <buffer> T :call <SID>GitTag()<CR>
+   nnoremap <silent> <nowait> <buffer> R :call <SID>GitRemote()<CR>
+
+   nnoremap <silent> <nowait> <buffer> u :call <SID>GitRefresh()<CR>
+   nnoremap <silent> <nowait> <buffer> o :call <SID>Git_o()<CR>
+   nnoremap <silent> <nowait> <buffer> i :call <SID>Git_i()<CR>
 endfunction " >>>
 
-function! GitStatus() " <<<
+function! s:GitStatus() " <<<
    let s:CurrentView = 1
    call PanelUpdate()
 endfunction " >>>
 
-function! GitLog() " <<<
+function! s:GitLog() " <<<
    let s:CurrentView = 2
    call PanelUpdate()
 endfunction " >>>
 
-function! GitBranch() " <<<
+function! s:GitBranch() " <<<
    let s:CurrentView = 3
    call PanelUpdate()
 endfunction " >>>
 
-function! GitTag() " <<<
+function! s:GitTag() " <<<
    let s:CurrentView = 4
    call PanelUpdate()
 endfunction " >>>
 
-function! GitRemote() " <<<
+function! s:GitRemote() " <<<
    let s:CurrentView = 5
    call PanelUpdate()
 endfunction " >>>
 
-" function! GitOpen() " <<<
-" endfunction " >>>
+function! s:Git_o() " <<<
+   echom "oooooooooo"
+endfunction " >>>
+
+function! s:Git_i() " <<<
+   if s:CurrentView == s:VIEW_LOG " <<<
+      call s:GitShowCommitInfo()
+   endif " >>>
+endfunction " >>>
 
 function! IsGitRepo() " <<<
    let l:cwd = getcwd()
    if !has_key(g:GitRepoCache, l:cwd)
-      silent call system('git rev-parse --is-inside-work-tree')
+      silent call system(s:GitIsRepoCmd)
       let g:GitRepoCache[l:cwd] = (v:shell_error == 0)
    endif
    return g:GitRepoCache[l:cwd]
@@ -156,7 +170,7 @@ endfunction " >>>
 function! GitGetBranch() " <<<
    " system("git rev-parse --abbrev-ref HEAD 2>/dev/null | tr -d '\n'")
    " trim(system("git branch --show-current"))
-   silent let l:BranchName = trim(system("git symbolic-ref --short HEAD"))
+   silent let l:BranchName = trim(system(s:GitGetBranchCmd))
    if v:shell_error == 0
       let g:GitBranchName = l:BranchName
    else
@@ -242,6 +256,49 @@ function! GitUpdateInfo() " <<<
 
    call GitGetBranch()
    call GitGetStatus()
+endfunction " >>>
+
+function! s:GitRefresh() " <<<
+   " call GitGetBranch()
+   " call GitGetStatus()
+   call PanelUpdate()
+endfunction " >>>
+
+function! s:GitGetCommitInfo(commit_id) " <<<
+   if a:commit_id == ""
+      return
+   endif
+   let l:Output = systemlist(printf(s:GitGetCommitInfoCmd, "refs: %D%ncommit: %H%nparents: %P%n%nauthor name: %an%nauthor e-mail: %ae%nauthor date: %ad%n%ncommitter name: %cn%ncommitter e-mail: %ce%ncommitter date: %cd%n%nsubject: %s%nbody: %b", a:commit_id))
+   if v:shell_error == 0
+      return l:Output
+   else
+      return "something went wrong"
+   end
+endfunction " >>>
+
+function! s:GitShowCommitInfo() " <<<
+   let l:CommitID = s:GitLines[line('.')-1]
+   let l:Lines = s:GitGetCommitInfo(l:CommitID)
+
+   let l:BufNr = bufadd('')
+   call bufload(l:BufNr)
+
+   call setbufvar(l:BufNr, '&buftype', 'nofile')
+   call setbufvar(l:BufNr, '&bufhidden', 'wipe')
+   call setbufvar(l:BufNr, '&swapfile', 0)
+   call setbufvar(l:BufNr, '&buflisted', 0)
+
+   call setbufline(l:BufNr, 1, l:Lines)
+
+   call popup_create(l:BufNr, {
+      \ 'title':     ' Commit Info ',
+      \ 'border':    [1, 1, 1, 1],
+      \ 'padding':   [0, 1, 0, 1],
+      \ 'pos':       'center',
+      \ 'moved':     'any',
+      \ 'mapping':   0,
+      \ 'close':     'click',
+      \ })
 endfunction " >>>
 
 augroup Git
